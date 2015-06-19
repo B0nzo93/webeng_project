@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>WebEngineering 2015 - Blatt 06 - Lösung via AJAX</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script> <!-- must come before Bootstrap, because Bootstrap's JavaScript requires jQuery -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+    <script>
+        $(function() { //gets executed once the page is loaded
+            $("#convert").click(convert);
+            $("form").submit(function( event ) {
+                //prevent page reload when enter is pressed within the input
+                convert();
+                event.preventDefault();
+            });
+        });
+
+        function convert() {
+            var dir = $("#currency").val();
+            var to   = dir==2 ? "EUR" : "USD";
+
+            $.getJSON("/api?to="+to+"&value="+$("#value").val(), function(data) {
+                $("#result").html(
+                        "Das Ergebnis lautet: "
+                        + data[to]
+                        + to
+                );
+            });
+        }
+    </script>
+</head>
+<body>
+<div class="container">
+    <div class="jumbotron">
+        <h3>Web Engineering 2015 AJAX W&auml;hrungsrechner</h3>
+        <div class="container">
+            <form class="form-horizontal" role="form">
+                <div class="row">
+                    <div class="form-group col-sm-2">
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="value">
+                        </div><!-- /input-group -->
+                    </div><!-- /.col-sm-2 -->
+                    <div class="form-group col-sm-2">
+                        <div class="input-group">
+                            <select class="form-control" id="currency">
+                                <option value="1">EUR > USD</option>
+                                <option value="2">USD > EUR</option>
+                            </select>
+                        </div><!-- /input-group -->
+                    </div><!-- /.col-sm-2 -->
+                    <div class="form-group col-sm-2">
+                        <div class="input-group">
+                            <button id="convert" type="button" class="btn btn-info">Umrechnen</button>
+                        </div><!-- /input-group -->
+                    </div><!-- /.col-sm-2 -->
+                </div><!-- /.row -->
+            </form>
+        </div><!-- /.container -->
+        <div id="result">
+            Das Ergebnis lautet:
+        </div>
+    </div><!-- /.jumbotron -->
+</div><!-- /.container -->
+</body>
+<script>
+</script>
+</html>
