@@ -3,23 +3,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
          version="3.1">
-    <!-- Called from /ajax.html -->
-    <servlet>
-        <servlet-name>AJAX</servlet-name>
-        <servlet-class>AJAXServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>AJAX</servlet-name>
-        <url-pattern>/api</url-pattern>
-    </servlet-mapping>
-
-    <!-- Calls /post.jsp-->
     <servlet>
         <servlet-name>POST</servlet-name>
         <servlet-class>POSTServlet</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>POST</servlet-name>
-        <url-pattern>/post</url-pattern>
+        <url-pattern>/</url-pattern>
     </servlet-mapping>
+
 </web-app>

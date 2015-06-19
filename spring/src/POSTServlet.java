@@ -8,7 +8,7 @@ import java.io.PrintWriter;
 
 public class POSTServlet extends HttpServlet {
     private void render(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        RequestDispatcher rd = request.getRequestDispatcher("/post.jsp");
+        RequestDispatcher rd = request.getRequestDispatcher("/view.jsp");
         rd.forward(request, response);
     }
 
@@ -19,23 +19,9 @@ public class POSTServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setContentType("application/javascript");
         try {
-            //first verify if the user input is correct
-            verifyCurrencyRequest(request);
-
-            //transform the user input in a proper format
-            String currency = request.getParameter("currency");
-            Double value = Double.parseDouble(request.getParameter("value"));
-
-            //calculate and print the results
-            if (currency.equalsIgnoreCase("1")) {
-                request.setAttribute("from", new Money(value, "EUR"));
-                request.setAttribute("to", new Money(toUSD(value), "USD"));
-                request.setAttribute("dir", "1");
-            } else {
-                request.setAttribute("from", new Money(value, "USD"));
-                request.setAttribute("to", new Money(toEUR(value), "EUR"));
-                request.setAttribute("dir", "2");
-            }
+            // get note text and create a new Note POJO
+            String note_text = request.getParameter("note");
+            request.setAttribute("note_object", new Note(note_text));
         } catch (IllegalArgumentException e) {
             request.setAttribute("error", e.getMessage());
         }
