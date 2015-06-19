@@ -6,7 +6,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-public class POSTCurrencyServlet extends HttpServlet {
+public class POSTServlet extends HttpServlet {
     private void render(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         RequestDispatcher rd = request.getRequestDispatcher("/post.jsp");
         rd.forward(request, response);

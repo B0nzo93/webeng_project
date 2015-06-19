@@ -6,7 +6,7 @@
     <!-- Called from /ajax.html -->
     <servlet>
         <servlet-name>AJAX</servlet-name>
-        <servlet-class>AJAXCurrencyServlet</servlet-class>
+        <servlet-class>AJAXServlet</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>AJAX</servlet-name>
@@ -16,7 +16,7 @@
     <!-- Calls /post.jsp-->
     <servlet>
         <servlet-name>POST</servlet-name>
-        <servlet-class>POSTCurrencyServlet</servlet-class>
+        <servlet-class>POSTServlet</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>POST</servlet-name>

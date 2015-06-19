@@ -10,7 +10,7 @@ import java.io.PrintWriter;
  * Created by woelfl on 5/11/15.
  * Modified by niko.
  */
-public class AJAXCurrencyServlet extends HttpServlet {
+public class AJAXServlet extends HttpServlet {
     /**
      * Handles all get requests. In our example, the servlet has just one task, which is
      * currency conversion.
