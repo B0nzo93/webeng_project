@@ -1,0 +1,32 @@
+DB:
+ * Note: ID, Date, Title, Description, Category (Nullable)
+ * Category: ID, Name
+
+API:
+ * Note: get, add, edit, delete, mark-as-done
+ * Category: get, add, edit, delete
+
+
+GET 	/categories
+	Lists all categories
+GET 	/categories/{name}
+	Display all notes belonging to the category {name}
+PUT 	/categories/{name}
+	Create a new category with the name {name}
+DELETE 	/categories/{name}
+	Delete the category with the name {name} (and cascade delete the notes assigned to this category)
+POST	/categories/{name}
+	Rename the category {name} to the name sent in the post body
+
+GET 	/notes
+	Lists all notes
+GET 	/notes/{id}
+	Display the content of the note with the given id
+PUT		/notes ??
+	Create a new note (id?)
+DELETE 	/notes/{id}
+	Delete the note with the given id
+POST 	/notes/{id}
+	Overwrite the content of the note with the given id
+
+Mark done: POST /notes/{id}?done=true
