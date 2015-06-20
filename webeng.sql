@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `todo` (
   `title` varchar(256) NOT NULL,
   `created` date NOT NULL,
   `done` tinyint(1) NOT NULL,
-  `category_id` int(11) NOT NULL
+  `category_id` int(11)
 );
 
 ALTER TABLE `category`
@@ -28,4 +28,4 @@ ALTER TABLE `todo`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `todo`
-ADD CONSTRAINT `todo_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `todo_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`) ON DELETE CASCADE;
