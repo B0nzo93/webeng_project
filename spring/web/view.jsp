@@ -10,8 +10,9 @@
     No note submitted yet
   <% }%>
     <form name="note" method="post" action>
-        <textarea name="note" rows="4" cols="50">This is a note</textarea><br>
-        <input type="hidden" name="action" value="create">
+        Title: <input type="text" name="title"><br>
+        <textarea name="noteText" rows="4" cols="50">This is a note</textarea><br>
+        <input type="hidden" name="action" value="createNote">
         <input type="submit" value="create">
     </form>
   </body>

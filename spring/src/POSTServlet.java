@@ -29,20 +29,32 @@ public class POSTServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setContentType("application/javascript");
         try {
-            // get note text and create a new Note POJO
-            String note_text = request.getParameter("note");
-            createSessionFactory();
-            createCategory("dfafdafdafdaf");
-            //addTodoNote("test", note_text, new Date(new java.util.Date().getTime()), false, category);
-            //request.setAttribute("note_object", new TodoEntity());
-
+            if (request.getParameter("action") != null) {
+                switch (request.getParameter("action")) {
+                    case "createNote":
+                        if (request.getParameter("noteText") != null && request.getParameter("title") != null) {
+                            String title = request.getParameter("title");
+                            String note_text = request.getParameter("noteText");
+                            addTodoNote(title, note_text, false);
+                        }
+                        break;
+                    case "createCategory":
+                        break;
+                    case "editNote":
+                        break;
+                    case "deleteNote":
+                        break;
+                    case "setDoneNote":
+                        break;
+                }
+            }
         } catch (IllegalArgumentException e) {
             request.setAttribute("error", e.getMessage());
         }
         render(request, response);
     }
 
-   private Integer addTodoNote(String title, String description, Date created, boolean done, CategoryEntity categoryEntity) {
+   private Integer addTodoNote(String title, String description, boolean done, CategoryEntity categoryEntity) {
        Session session = factory.openSession();
        Transaction tx = null;
        Integer noteId = null;
@@ -51,7 +63,8 @@ public class POSTServlet extends HttpServlet {
            TodoEntity newNote = new TodoEntity();
            newNote.setTitle(title);
            newNote.setDescription(description);
-           newNote.setCreated(created);
+           Date now = new Date(new java.util.Date().getTime());
+           newNote.setCreated(now);
            newNote.setDone((byte) (done ? 1 : 0 ));
            newNote.setCategoryByGroupId(categoryEntity);
            noteId = (Integer) session.save(newNote);
@@ -64,6 +77,29 @@ public class POSTServlet extends HttpServlet {
        }
        return noteId;
    }
+
+    private Integer addTodoNote(String title, String description, boolean done) {
+        Session session = factory.openSession();
+        Transaction tx = null;
+        Integer noteId = null;
+        try {
+            tx = session.beginTransaction();
+            TodoEntity newNote = new TodoEntity();
+            newNote.setTitle(title);
+            newNote.setDescription(description);
+            Date now = new Date(new java.util.Date().getTime());
+            newNote.setCreated(now);
+            newNote.setDone((byte) (done ? 1 : 0 ));
+            noteId = (Integer) session.save(newNote);
+            tx.commit();
+        } catch (HibernateException e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+        } finally {
+            session.close();
+        }
+        return noteId;
+    }
 
     private Integer createCategory(String name) {
         Session session = factory.openSession();
