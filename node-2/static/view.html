@@ -90,8 +90,7 @@
      			$.ajax({
     			url: '/notes/ ' + note_id,
     			type: 'DELETE',
-    			success: function() {
-    				refreshData();
+    			success: refreshData()
     			}
     	});
 		}
