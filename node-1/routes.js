@@ -159,34 +159,37 @@ module.exports = function(app, db){
 
 	app.get('/notes/:id', function (req, res) {
 		console.log("Request: GET /notes/" + req.params.id);
-		db.query("SELECT * FROM todo_category WHERE todo.id = ?", req.params.id, 
+		db.query("SELECT * FROM todo_category WHERE id = ?", req.params.id, 
 			errorhandler(res),
 			function(rows) {
-				console.log("Response: " + rows);
+				console.log("Response: " + JSON.stringify(rows[0]));
 				res.status(200).json(rows[0]);
 			});
 	});
 
-	// app.put('/notes/:name', function (req, res) {
-	// 	console.log("Request: PUT /categories/" + req.params.name);
-	// 	db.query("INSERT IGNORE INTO category (name) VALUES (?)", req.params.name,
-	// 		errorhandler(res),
-	// 		function(rows) {
-	// 			// console.log(rows);	
-	// 			if(rows.insertId) {
-	// 				console.log("Response:" + JSON.stringify({success: "true", category_id: rows.insertId}));
-	// 				res.status(200).json({success: true, category_id: rows.insertId});
-	// 			} else {
-	// 				db.query("SELECT id FROM category WHERE name=?", req.params.name,
-	// 					errorhandler(res),
-	// 					function(rows) {
-	// 						console.log("Response: " + JSON.stringify({success: "false", message: "category " + req.params.name + " already existing", category_id : rows[0].id}));
-	// 						res.status(200).json({success: false, message: "category " + req.params.name + " already existing", category_id : rows[0].id});
-	// 					});
-	// 			}
-	// 		});
-	// });
+	app.put('/notes', function (req, res) {
+		console.log("Request: PUT /notes/ | " + JSON.stringify(req.body));
+		var description = req.body.description;
+		var title = req.body.title;
+		var created = req.body.date;
+		var isDone = req.body.done ? 1 : 0;
+		var category_name = req.body.category_name;
+		// INSERT INTO todo (description, title, created, done, category_id) SELECT "descr1", "title1", CURDATE(), 0, category.id FROM category WHERE category.name="blubb"
+		db.query("INSERT INTO todo (description, title, created, done, category_id) SELECT ?, ?, ?, ?, category.id FROM category WHERE category.name = ?", [description, title, created, isDone, category_name],
+			errorhandler(res),
+			function(rows) {
+				// after inserting a new note, get it's id and then retrieve the values to show the complete note, as with a GET request
+				var insertId = rows.insertId;
 
+				db.query("SELECT * FROM todo_category WHERE id = ?", insertId, errorhandler(res),
+					function(rows) {
+						console.log("Response: " + JSON.stringify(rows[0]));
+						res.status(200).json(rows[0]);
+					});
+			});
+	});
+
+	
 
 
 }
