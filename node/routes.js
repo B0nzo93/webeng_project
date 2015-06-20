@@ -53,7 +53,7 @@ module.exports = function(app, db){
 			function(err) {writeDBError(res, err);},
 			function(rows) {
 				console.log(rows);
-				res.status(200);
+				res.status(200).send("deleted "+req.params.name);
 			});
 	});
 	app.post('/categories/:name', function (req, res) {
@@ -63,7 +63,7 @@ module.exports = function(app, db){
 				function(err) {writeDBError(res, err);},
 				function(rows) {
 					console.log(rows);
-					res.status(200);
+					res.status(200).send("renamed "+req.params.name+" to "+req.body);
 				});
 		} else {
 			//TODO missing arg
