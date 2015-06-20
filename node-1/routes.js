@@ -30,7 +30,7 @@ function isEmpty(obj) {
 }
 
 module.exports = function(app, db){
-	app.use(bodyParser.text({type:"*/*"})); //accept all types
+	app.use(bodyParser.json( {type: "*/*"} ));
 	app.use(express.static('static'));
 
 	app.get('/categories', function (req, res) {
@@ -106,7 +106,7 @@ module.exports = function(app, db){
 
 	app.post('/categories/:name', function (req, res) {
 		console.log("Request: POST /categories/" + req.params.name + " | " + req.body);
-		console.log("POST body: " + req.body);
+		console.log("POST body: " + JSON.stringify(req.body));
 		if(!isEmpty(req.body)) {
 			db.query("SELECT name FROM category WHERE name = ?", req.params.name,
 			errorhandler(res),
@@ -115,18 +115,21 @@ module.exports = function(app, db){
 					console.log("Response: 404: " + JSON.stringify({success: false, message: "Category " + req.params.name + " not found."}));
 					res.status(404).json({success: false, message: "Category " + req.params.name + " not found."});
 				} else {
-					db.query("UPDATE category SET name=? WHERE name=? LIMIT 1", [req.body, req.params.name],
+					var newName = req.body.name;
+					db.query("UPDATE category SET name=? WHERE name=? LIMIT 1", [newName, req.params.name],
 						errorhandler(res),
 						function(rows) {
-							console.log("Response: " + JSON.stringify({success: true, message: "Category " + req.params.name + " renamed to " + req.body}));
-							res.status(200).json({success: true, message: "Category " + req.params.name + " renamed to " + req.body});
+							var json = {success: true, message: "Category " + req.params.name + " renamed to " + newName};
+							console.log("Response: " + JSON.stringify(json));
+							res.status(200).json(json);
 					});
 				}
 			});
 		} else {
 			console.log("req.body is empty");
-			console.log("Response: 400: " + JSON.stringify({success: false, message: "new name in POST body required"}));
-			res.status(400).json({success: false, message: "new name in POST body requiered"});
+			var json = {success: false, message: "new name in POST body required"};
+			console.log("Response: 400: " + JSON.stringify(json));
+			res.status(400).json(json);
 		}
 	});
 
@@ -163,6 +166,26 @@ module.exports = function(app, db){
 				res.status(200).json(rows[0]);
 			});
 	});
+
+	// app.put('/notes/:name', function (req, res) {
+	// 	console.log("Request: PUT /categories/" + req.params.name);
+	// 	db.query("INSERT IGNORE INTO category (name) VALUES (?)", req.params.name,
+	// 		errorhandler(res),
+	// 		function(rows) {
+	// 			// console.log(rows);	
+	// 			if(rows.insertId) {
+	// 				console.log("Response:" + JSON.stringify({success: "true", category_id: rows.insertId}));
+	// 				res.status(200).json({success: true, category_id: rows.insertId});
+	// 			} else {
+	// 				db.query("SELECT id FROM category WHERE name=?", req.params.name,
+	// 					errorhandler(res),
+	// 					function(rows) {
+	// 						console.log("Response: " + JSON.stringify({success: "false", message: "category " + req.params.name + " already existing", category_id : rows[0].id}));
+	// 						res.status(200).json({success: false, message: "category " + req.params.name + " already existing", category_id : rows[0].id});
+	// 					});
+	// 			}
+	// 		});
+	// });
 
 
 
