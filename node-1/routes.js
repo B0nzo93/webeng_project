@@ -78,7 +78,6 @@ module.exports = function(app, db){
 		db.query("INSERT IGNORE INTO category (name) VALUES (?)", req.params.name,
 			errorhandler(res),
 			function(rows) {
-				// console.log(rows);	
 				if(rows.insertId) {
 					console.log("Response:" + JSON.stringify({success: "true", category_id: rows.insertId}));
 					res.status(200).json({success: true, category_id: rows.insertId});
@@ -94,9 +93,16 @@ module.exports = function(app, db){
 	});
 
 	app.delete('/categories/:name', function (req, res) {
-		// TODO: delete associated notes
+		// TODO: Check if category with given name exists, otherwise the deletion of associated notes cannot be performed
 		console.log("Request: DELETE /categories/" + req.params.name);
-		db.query("DELETE FROM category WHERE name=? LIMIT 1", req.params.name,
+		// First, delete all notes that are associated to this category
+		db.query("DELETE FROM todo WHERE category_id=(SELECT id FROM category WHERE name=?)", req.params.name,
+			errorhandler(res), 
+			function(rows) {
+				//
+			});
+		// Then, delete the category itself
+		db.query("DELETE FROM category WHERE name=? LIMIT 1;", req.params.name,
 			errorhandler(res),
 			function(rows) {
 				console.log("Response: " + JSON.stringify({success: true, message: "Category " + req.params.name + " deleted"}));
@@ -133,24 +139,11 @@ module.exports = function(app, db){
 	});
 
 
-	// function todoRowToJSON(row) {
-	// 	var isNoteDone = (row.done != 0);
-	// 	return {id: row.id, title: row.title, description: row.description, text: row.title + "\n" + row.description, done: isNoteDone, category: row.name, date: row.created};
-	// }
-
 	app.get('/notes', function (req, res) {
 		console.log("Request: GET /notes");
 		db.query("SELECT * FROM todo_category", [],
 			errorhandler(res),
 			function(rows) {
-				var notes = [];
-				var curRow, curNote;
-				// for (i in rows) {
-				// 	curRow = rows[i];
-				// 	// var isNoteDone = (curRow.done != 0);
-				// 	curNote = todoRowToJSON(curRow);
-				// 	notes.push(curNote);
-				// }
 				console.log("Response: " + JSON.stringify(rows));
 				res.status(200).json(rows);
 			});
@@ -174,8 +167,6 @@ module.exports = function(app, db){
 		var created = req.body.date;
 		var isDone = req.body.done ? 1 : 0;
 		var category_name = req.body.category;
-		// INSERT INTO todo (description, title, created, done, category_id) SELECT "descr1", "title1", CURDATE(), 0, category.id FROM category WHERE category.name="blubb"
-		// INSERT INTO todo (description, title, created, done, category_id) VALUES ("descr1", "title1", CURDATE(), 0, (SELECT category.id FROM category WHERE category.name="mycat" LIMIT 1))
 		db.query("INSERT INTO todo (description, title, created, done, category_id) VALUES(?, ?, ?, ?, (SELECT category.id FROM category WHERE category.name = ? LIMIT 1))", [description, title, created, isDone, category_name],
 			errorhandler(res),
 			function(rows) {
