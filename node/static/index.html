@@ -107,6 +107,19 @@
 		background-color: transparent;
 		font: inherit;
 	}
+	.entry-info {
+		display: table-cell;
+		width: 100px;
+		text-align: right;
+		color: #999;
+		font-size: 80%;
+		font-style: normal;
+		padding-right: 5px;
+		vertical-align: middle;
+	}
+	.entry-info-category {
+		display: block;
+	}
 	.entry-delete {
 		display: table-cell;
 		width: 30px;
@@ -131,11 +144,15 @@
 		height: 22px;
 		margin: 4px 5px;
 	}
+	ng-md-icon {
+		cursor: pointer;
+	}
 	</style>
 
 	<!-- AngularJS Scripts -->
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular-sanitize.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular-resource.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/angular-material-icons/0.4.0/angular-material-icons.min.js"></script>
 	<script src="elastic.js"></script>
 	<script>
@@ -143,19 +160,34 @@
 	var FILTER_NONE = "none";
 
 	angular
-	.module('todoApp', ['ngSanitize', 'monospaced.elastic', 'ngMdIcons'])
-	.controller('TodoListController', function() {
+	.module('todoApp', ['ngResource', 'ngSanitize', 'monospaced.elastic', 'ngMdIcons'])
+	.controller('TodoListController', function($resource) {
+		var Category = $resource('categories/:id', {}, {
+			get: {method:'GET', isArray:true},
+			query: {method:'GET', isArray:true}
+		});
+
 		var todoList = this;
 		todoList.todos = [
-			{id: 01, text:'implement fancy design', done:true, category: "frontend"},
+			{id: 01, text:'implement fancy design', done:true, category: "frontend", date:1288323623006},
 			{id: 12, text:'add categories', done:false, category: "frontend"},
-			{id: 34, text:'check if simple todo titles are ok\nor if they have to be saved in their own field', done:false},
+			{id: 34, text:'check if simple todo titles are ok\nor if they have to be saved in their own field', done:false, date:new Date("1995-12-17T03:24:00")},
 			{id: 56, text:'build REST API', done:false, category: "backend"},
 			{id: 78, text:'sync with REST API', done:false, category: "backend"},
 		];
 		todoList.categories = [];
 		todoList.selectedCategory = FILTER_ANY;
-		todoList.filterCategories = []
+		todoList.filterCategories = [];
+
+		Category.query(function(data){
+			for (var i = 0; i < data.length; i++) {
+				todoList.categories.push(data[i]);
+			}
+			todoList.validateAll();
+		});
+		// Category.get({id:"abcde"},function(data){
+		// 	console.log(data);
+		// });
 
 		todoList.newTodo = function() {
 			var id = 0;
@@ -167,7 +199,7 @@
 				category = undefined;
 			}
 
-			todoList.todos.push({id: id, text: "", done: false, editable: true, category: category});
+			todoList.todos.push({id: id, text: "", done: false, editable: true, category: category, date: Date.now()});
 		};
 
 		todoList.remaining = function() {
@@ -196,7 +228,7 @@
 
 		todoList.remove = function(item) { 
 			var index = todoList.todos.indexOf(item);
-			todoList.todos.splice(index, 1);     
+			todoList.todos.splice(index, 1);
 		};
 
 		todoList.isSelected = function(item) {
@@ -208,6 +240,31 @@
 				return item.category == todoList.selectedCategory;
 			}
 		};
+
+		todoList.isSpecialCategory = function() {
+			return todoList.selectedCategory == FILTER_ANY || todoList.selectedCategory == FILTER_NONE || !todoList.selectedCategory;
+		}
+		todoList.addCategory = function() {
+			var name = prompt("Please enter a new for the new category");
+			if(name) {
+				todoList.categories.push(name);
+				todoList.filterCategories.push(name);
+			}
+		}
+		todoList.removeCategory = function() {
+			if(todoList.isSpecialCategory()) {
+				return;
+			}
+			{
+				var index = todoList.categories.indexOf(todoList.selectedCategory);
+				todoList.categories.splice(index, 1);
+			}
+			{
+				var index = todoList.filterCategories.indexOf(todoList.selectedCategory);
+				todoList.filterCategories.splice(index, 1);
+			}
+			todoList.selectedCategory = FILTER_ANY;
+		}
 
 		todoList.validate = function(item) { 
 			if(!item.text && !item.lastText) {
@@ -225,10 +282,12 @@
 				todoList.filterCategories.push(cat);
 			});
 		};
+		todoList.validateAll = function() {
+			angular.forEach(todoList.todos, function(todo) {
+				todoList.validate(todo);
+			});
+		};
 
-		angular.forEach(todoList.todos, function(todo) {
-			todoList.validate(todo);
-		});
 		console.log(todoList.categories);
 	})
 	.directive('focusOn', function($timeout) {
@@ -258,6 +317,18 @@
 	<content ng-controller="TodoListController as todoList">
 		<div id="list-header">
 			<select id="category-select" ng-model="todoList.selectedCategory" ng-options="cat for cat in todoList.filterCategories"></select>
+			
+			<ng-md-icon 
+				ng-click="todoList.addCategory()"
+				icon="add_circle_outline"
+				title="Add new cateogry"
+				size="30"></ng-md-icon>
+			<ng-md-icon 
+				ng-click="todoList.removeCategory()"
+				icon="remove_circle_outline"
+				title="Remove current cateogry"
+				ng-hide="todoList.isSpecialCategory()"
+				size="30"></ng-md-icon>
 			<ng-md-icon 
 				ng-click="todoList.archive()"
 				icon="archive"
@@ -285,6 +356,10 @@
 						focus-on="todo.editable"
 						ng-focus="$rootScope.$broadcast('elastic:adjust');"
 						msd-elastic></textarea>
+				</div>
+				<div class="entry-info">
+					<span class="entry-info-category" ng-bind-html="todo.category"></span>
+					<span class="entry-info-date" ng-bind-html="todo.date | date:'yyyy-MM-dd'"></span>
 				</div>
 				<ng-md-icon 
 					class="entry-delete"
