@@ -6,34 +6,42 @@ pool.on('error', function(err) {
 	errorCallback(err);
 });
 
-pool.getConnection(function(err, con) {
+// Define routes
+var express = require("express");
+var app     = express();
+
+app.use(express.static("static"));
+app.get('/notes', function (req, res) {
+	selectAllNotes(req, res);
+});
+
+
+/*
+app.get('/:name', function (req, res) {
+	res.send("Hello "+req.params.name+"!");
+});
+*/
+
+function selectAllNotes(req, res) {
+	pool.getConnection(function(err, con) {
 	if (err) {
 		if(con) {
 			con.release();
 		}
 		//errorCallback(err);
 	} else {
-		con.query(QUERY, VALUES, function(err, rows) {
+		con.query("SELECT t.id, t.title, t.description, t.created, t.done, c.id as category_id, c.name as category_name FROM todo t JOIN category c ON t.category_id = c.id", function(err, rows) {
 			con.release();
 			if (err) {
 				//errorCallback(err);
 			} else {
 				//successCallback(rows);
+				res.json(rows);
 			}
 		});
 	}
 });
-
-// Define routes
-var express = require("express");
-var app     = express();
-
-app.get('/', function (req, res) {
-	res.send("Hello World!");
-});
-app.get('/:name', function (req, res) {
-	res.send("Hello "+req.params.name+"!");
-});
+}
 
 // Start
 var server = app.listen(3000, function () {
