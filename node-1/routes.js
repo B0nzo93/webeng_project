@@ -129,4 +129,41 @@ module.exports = function(app, db){
 			res.status(400).json({success: false, message: "new name in POST body requiered"});
 		}
 	});
+
+
+	// function todoRowToJSON(row) {
+	// 	var isNoteDone = (row.done != 0);
+	// 	return {id: row.id, title: row.title, description: row.description, text: row.title + "\n" + row.description, done: isNoteDone, category: row.name, date: row.created};
+	// }
+
+	app.get('/notes', function (req, res) {
+		console.log("Request: GET /notes");
+		db.query("SELECT * FROM todo_category", [],
+			errorhandler(res),
+			function(rows) {
+				var notes = [];
+				var curRow, curNote;
+				// for (i in rows) {
+				// 	curRow = rows[i];
+				// 	// var isNoteDone = (curRow.done != 0);
+				// 	curNote = todoRowToJSON(curRow);
+				// 	notes.push(curNote);
+				// }
+				console.log("Response: " + JSON.stringify(rows));
+				res.status(200).json(rows);
+			});
+	});
+
+	app.get('/notes/:id', function (req, res) {
+		console.log("Request: GET /notes/" + req.params.id);
+		db.query("SELECT * FROM todo_category WHERE todo.id = ?", req.params.id, 
+			errorhandler(res),
+			function(rows) {
+				console.log("Response: " + rows);
+				res.status(200).json(rows[0]);
+			});
+	});
+
+
+
 }
