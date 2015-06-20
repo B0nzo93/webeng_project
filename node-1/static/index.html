@@ -306,7 +306,7 @@
 		// Show a prompt for creating a new category
 		todoList.addCategory = function() {
 			var name = prompt("Please enter a name for the new category");
-			if(name) {
+			if(name && todoList.filterCategories.indexOf(name) === -1) {
 				// Add the new category to the listings
 				todoList.categories.push(name);
 				todoList.filterCategories.push(name);
