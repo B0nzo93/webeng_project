@@ -9,6 +9,7 @@ module.exports = function(app, db){
 	app.use(express.static('static'));
 
 	app.get('/categories', function (req, res) {
+		console.log("Request: GET /categories");
 		db.query("SELECT name FROM category", [],
 			function(err) {writeDBError(res, err);},
 			function(rows) {
@@ -16,34 +17,51 @@ module.exports = function(app, db){
 				for (i in rows) {
 					names.push(rows[i].name);
 				}
+				console.log("Response: [" + names + "]");
 				res.json(names);
 			});
 	});
 	app.get('/categories/:name', function (req, res) {
-		//TODO 404
-		db.query("SELECT * FROM todo WHERE category_id IN (SELECT name FROM category WHERE name = ?)", req.params.name,
+		console.log("Request: GET /categories/" + req.params.name);
+		db.query("SELECT name FROM category WHERE name = ?", req.params.name,
 			function(err) {writeDBError(res, err);},
 			function(rows) {
-				var names = [];
-				for (i in rows) {
-					names.push(rows[i].name);
+				if(rows.length == 0) {
+					console.log("Response: 404: Category " + req.params.name + " not found.");
+					res.status(404).send("Category " + req.params.name + " not found.");
 				}
-				res.json(names);
+				else{
+					db.query("SELECT * FROM todo WHERE category_id IN (SELECT name FROM category WHERE name = ?)",
+						req.params.name,
+						function(err) {writeDBError(res, err);},
+						function(rows) {
+							var names = [];
+							for (i in rows) {
+								names.push(rows[i].name);
+							}
+							console.log("Response: [" + names + "]");
+							res.json(names);
+						});
+				}
+
 			});
+
 	});
 	app.put('/categories/:name', function (req, res) {
+		console.log("Request: PUT /categories/" + req.params.name);
 		db.query("INSERT IGNORE INTO category (name) VALUES (?)", req.params.name,
 			function(err) {writeDBError(res, err);},
 			function(rows) {
-				console.log(rows);
+				// console.log(rows);	
 				if(rows.insertId) {
-					res.send(rows.insertId+"");
+					console.log("Response:" + JSON.stringify({success: "true", category_id: rows.insertId}));
+					res.json({success: "true", category_id: rows.insertId});
 				} else {
 					db.query("SELECT id FROM category WHERE name=?", req.params.name,
 						function(err) {writeDBError(res, err);},
 						function(rows) {
-							console.log(rows);
-							res.send(rows[0].id+"");
+							console.log("Respone: " + JSON.stringify({success: "false", message: "category " + req.params.name + " already existing", category_id : rows[0].id}));
+							res.json({success: "false", message: "category " + req.params.name + " already existing", category_id : rows[0].id});
 						});
 				}
 			});
