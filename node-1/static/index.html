@@ -208,14 +208,24 @@
 			// });	
 		}
 
-		todoList.validate = function(item) { 
+		todoList.validate = function(item) {
+			//assume that title and description are united as text and seperate them
 			if(!item.text && !item.lastText) {
 				todoList.remove(item);
 			} else if(!item.text) {
 				item.text = item.lastText;
 			} else {
-				item.lastText = item.text;
-				item.title = item.text.split('\n')[0];
+				var text = item.text.trim();
+				item.lastText = text;
+				var index = text.indexOf('\n');
+				if (index !== -1) {
+					item.title = text.substring(0, index);
+					item.description = text.substring(index + 1);
+				} else {
+					item.title = text;
+					item.description = "";
+				}
+				console.log(item);
 				if (item.category && todoList.categories.indexOf(item.category) === -1) {
 					todoList.categories.push(item.category);
 					todoList.filterCategories.push(item.category);
