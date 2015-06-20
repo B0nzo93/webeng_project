@@ -22,6 +22,7 @@
 		var todos = [];
 		
 		function refreshData() {
+			$("#content").empty();
 			$.getJSON("/notes", function(data) {
 				todos = [];
 				$.each(data, function(idx, obj){ 
@@ -89,7 +90,9 @@
      			$.ajax({
     			url: '/notes/ ' + note_id,
     			type: 'DELETE',
-    			success: refreshData()
+    			success: function() {
+    				refreshData();
+    			}
     	});
 		}
 
