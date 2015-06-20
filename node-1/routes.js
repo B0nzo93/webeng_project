@@ -175,7 +175,8 @@ module.exports = function(app, db){
 		var isDone = req.body.done ? 1 : 0;
 		var category_name = req.body.category;
 		// INSERT INTO todo (description, title, created, done, category_id) SELECT "descr1", "title1", CURDATE(), 0, category.id FROM category WHERE category.name="blubb"
-		db.query("INSERT INTO todo (description, title, created, done, category_id) SELECT ?, ?, ?, ?, category.id FROM category WHERE category.name = ?", [description, title, created, isDone, category_name],
+		// INSERT INTO todo (description, title, created, done, category_id) VALUES ("descr1", "title1", CURDATE(), 0, (SELECT category.id FROM category WHERE category.name="mycat" LIMIT 1))
+		db.query("INSERT INTO todo (description, title, created, done, category_id) VALUES(?, ?, ?, ?, (SELECT category.id FROM category WHERE category.name = ? LIMIT 1))", [description, title, created, isDone, category_name],
 			errorhandler(res),
 			function(rows) {
 				// after inserting a new note, get its id and then retrieve the values to show the complete note, as with a GET request
