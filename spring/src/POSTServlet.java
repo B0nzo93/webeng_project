@@ -55,7 +55,8 @@ public class POSTServlet extends HttpServlet {
     }
 
    private Integer addTodoNote(String title, String description, boolean done, CategoryEntity categoryEntity) {
-       Session session = factory.openSession();
+
+       Session session = SessionFactory.
        Transaction tx = null;
        Integer noteId = null;
        try {
