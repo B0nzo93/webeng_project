@@ -21,7 +21,7 @@ module.exports = function(app, db){
 	});
 	app.get('/categories/:name', function (req, res) {
 		//TODO 404
-		db.query("SELECT * FROM todo WHERE group_id IN (SELECT name FROM category WHERE name = ?)", req.params.name,
+		db.query("SELECT * FROM todo WHERE category_id IN (SELECT name FROM category WHERE name = ?)", req.params.name,
 			function(err) {writeDBError(res, err);},
 			function(rows) {
 				var names = [];
