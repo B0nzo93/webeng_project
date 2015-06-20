@@ -17,6 +17,9 @@ app.get('/notes', function (req, res) {
 app.delete('/notes/:id', function (req, res) {
 	deleteNote(req, res);
 });
+app.delete('/category/:id', function (req, res) {
+	deleteCategory(req, res);
+});
 app.post('/notes/', function (req, res) {
 	createNote(req, res);
 });
@@ -31,6 +34,29 @@ function deleteNote(req, res) {
 	} else {
 		var id = req.params.id
 		var sql = "DELETE FROM todo WHERE id="+id
+		con.query(sql, function(err, rows) {
+			con.release();
+			if (err) {
+				//errorCallback(err);
+			} else {
+				//successCallback(rows);
+				res.json(rows);
+			}
+		});
+	}
+	});
+}
+
+function deleteCategory(req, res) {
+	pool.getConnection(function(err, con) {
+	if (err) {
+		if(con) {
+			con.release();
+		}
+		//errorCallback(err);
+	} else {
+		var id = req.params.id
+		var sql = "DELETE FROM category WHERE id="+id
 		con.query(sql, function(err, rows) {
 			con.release();
 			if (err) {
@@ -65,6 +91,7 @@ function createNote(req, res) {
 	}
 	});
 }
+
 
 function selectAllNotes(req, res) {
 	pool.getConnection(function(err, con) {
