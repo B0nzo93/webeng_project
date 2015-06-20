@@ -7,7 +7,7 @@ import java.sql.Date;
  * Created by Christoph on 19.06.2015.
  */
 @Entity
-@Table(name = "todo", schema = "", catalog = "DAO")
+@Table(name = "todo", schema = "", catalog = "webeng")
 public class TodoEntity {
     private int id;
     private String description;

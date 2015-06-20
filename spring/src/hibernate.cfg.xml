@@ -6,8 +6,6 @@
     <session-factory>
         <property name="connection.url">jdbc:mysql://127.0.0.1:3306/webeng</property>
         <property name="connection.driver_class">com.mysql.jdbc.Driver</property>
-        <property name="hibernate.connection.username">webeng</property>
-        <property name="hibernate.connection.password">harald</property>
         <mapping class="DAO.CategoryEntity"/>
         <mapping class="DAO.TodoEntity"/>
         <!-- DB schema will be updated if needed -->
