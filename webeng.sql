@@ -29,3 +29,7 @@ ALTER TABLE `todo`
 
 ALTER TABLE `todo`
   ADD CONSTRAINT `todo_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`) ON DELETE CASCADE;
+
+CREATE VIEW todo_category AS 
+SELECT todo.id, todo.description, todo.title, todo.created, todo.done, category.name, CONCAT(todo.title, '\n', todo.description) AS text 
+FROM todo LEFT OUTER JOIN category ON category.id = todo.category_id;
