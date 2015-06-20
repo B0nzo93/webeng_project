@@ -14,13 +14,57 @@ app.use(express.static("static"));
 app.get('/notes', function (req, res) {
 	selectAllNotes(req, res);
 });
-
-
-/*
-app.get('/:name', function (req, res) {
-	res.send("Hello "+req.params.name+"!");
+app.delete('/notes/:id', function (req, res) {
+	deleteNote(req, res);
 });
-*/
+app.post('/notes/', function (req, res) {
+	createNote(req, res);
+});
+
+function deleteNote(req, res) {
+	pool.getConnection(function(err, con) {
+	if (err) {
+		if(con) {
+			con.release();
+		}
+		//errorCallback(err);
+	} else {
+		var id = req.params.id
+		var sql = "DELETE FROM todo WHERE id="+id
+		con.query(sql, function(err, rows) {
+			con.release();
+			if (err) {
+				//errorCallback(err);
+			} else {
+				//successCallback(rows);
+				res.json(rows);
+			}
+		});
+	}
+	});
+}
+
+function createNote(req, res) {
+	pool.getConnection(function(err, con) {
+	if (err) {
+		if(con) {
+			con.release();
+		}
+		//errorCallback(err);
+	} else {
+		var sql = ""
+		con.query(sql, function(err, rows) {
+			con.release();
+			if (err) {
+				//errorCallback(err);
+			} else {
+				//successCallback(rows);
+				res.json(rows);
+			}
+		});
+	}
+	});
+}
 
 function selectAllNotes(req, res) {
 	pool.getConnection(function(err, con) {
@@ -40,7 +84,7 @@ function selectAllNotes(req, res) {
 			}
 		});
 	}
-});
+	});
 }
 
 // Start

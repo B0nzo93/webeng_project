@@ -22,6 +22,7 @@
 		var todos = [];
 		
 		function refreshData() {
+			$("#content").empty();
 			$.getJSON("/notes", function(data) {
 				todos = [];
 				$.each(data, function(idx, obj){ 
@@ -41,8 +42,8 @@
 										'<h3 class="panel-title">' + todos[i].category_name +'</h3>' +
 										'<div class="text-right">' +
 										'<div class="btn-group">' +
-										'<button type="button" class="btn btn-primary">New category note</button>' +
-										'<button type="button" class="btn btn-danger">Delete</button>' +
+										'<button type="button" class="btn btn-primary" onClick="add(' +  todos[i] + ')" >New category note</button>' +
+										'<button type="button" class="btn btn-danger" onClick="deleteCategory(' +  todos[i].category_id + ')" >Delete</button>' +
 										'</div>' +
 										'</div>' +
 										'</div>' +
@@ -59,8 +60,8 @@
 							'<h3 class="panel-title">' + todos[i].title +  ' (created ' + todos[i].created + ')</h3>' +
 							'<div class="text-right">' +
 							'<div class="btn-group">' +
-								'<button type="button" class="btn btn-primary">Edit</button>' +
-								'<button type="button" class="btn btn-danger">Delete</button>' +
+								'<button type="button" class="btn btn-primary" onClick="add(' +  todos[i] + ')" >Edit</button>' +
+								'<button type="button" class="btn btn-danger" onClick="deleteNote(' +  todos[i].id + ')" >Delete</button>' +
 							'</div>' +
 							'</div>' +
 							'</div>' +
@@ -72,6 +73,28 @@
 			}
 		}
 		
+
+		function addCategory() {
+
+		}
+
+		function deleteCategory(category_id) {
+			$.ajax({
+    			url: '/category/ ' + category_id,
+    			type: 'DELETE',
+    			success: refreshData()
+		});
+		}
+
+		function deleteNote(note_id) {
+     			$.ajax({
+    			url: '/notes/ ' + note_id,
+    			type: 'DELETE',
+    			success: refreshData()
+    			}
+    	});
+		}
+
 		$(function() {
 			refreshData();
 		});
