@@ -123,11 +123,11 @@
 	.entry-delete {
 		display: table-cell;
 		width: 30px;
-  		vertical-align: middle;
-  		fill: #CCC;
+		vertical-align: middle;
+		fill: #CCC;
 	}
 	.entry-delete:hover {
-  		fill: #666;
+		fill: #666;
 	}
 	.entry-done {
 		color: #666;
@@ -164,8 +164,19 @@
 	.controller('TodoListController', function($resource) {
 		var Category = $resource('categories/:id', {}, {
 			get: {method:'GET', isArray:true},
-			query: {method:'GET', isArray:true}
+			query: {method:'GET', isArray:true},
+			add: {method:'PUT'},
+			rename: {method:'POST'},
+			remove: {method:'DELETE'}
 		});
+		// var ToDo = $resource('notes/:id', {}, {
+		// 	query: {method:'GET', isArray:true},
+		// 	get: {method:'GET'},
+		// 	add: {method:'PUT'},
+		// 	update: {method:'POST'},
+		// 	delete: {method:'DELETE'}
+		// });
+
 
 		var todoList = this;
 		todoList.todos = [
@@ -175,19 +186,64 @@
 			{id: 56, text:'build REST API', done:false, category: "backend"},
 			{id: 78, text:'sync with REST API', done:false, category: "backend"},
 		];
-		todoList.categories = [];
-		todoList.selectedCategory = FILTER_ANY;
-		todoList.filterCategories = [];
+		todoList.categories = []; // list of all real categories
+		todoList.filterCategories = []; // list of all categories used for filtering, including FILTER_ANY and FILTER_NONE
+		todoList.selectedCategory = null;
 
-		Category.query(function(data){
-			for (var i = 0; i < data.length; i++) {
-				todoList.categories.push(data[i]);
+		function reload() {
+			Category.query(function(data){
+				todoList.categories = [];
+				for (var i = 0; i < data.length; i++) {
+					todoList.categories.push(data[i]);
+				}
+				todoList.validateAll();
+				if (todoList.filterCategories.indexOf(todoList.selectedCategory) === -1) {
+					todoList.selectedCategory = FILTER_ANY;
+				}
+			});
+			// ToDo.query(function(data){
+			// 	for (var i = 0; i < data.length; i++) {
+			// 		todoList.todos.push(data[i]);
+			// 	}
+			// });	
+		}
+
+		todoList.validate = function(item) {
+			//assume that title and description are united as text and seperate them
+			if(!item.text && !item.lastText) {
+				todoList.remove(item);
+			} else if(!item.text) {
+				item.text = item.lastText;
+			} else {
+				var text = item.text.trim();
+				item.lastText = text;
+				var index = text.indexOf('\n');
+				if (index !== -1) {
+					item.title = text.substring(0, index);
+					item.description = text.substring(index + 1);
+				} else {
+					item.title = text;
+					item.description = "";
+				}
+				console.log(item);
+				if (item.category && todoList.categories.indexOf(item.category) === -1) {
+					todoList.categories.push(item.category);
+					todoList.filterCategories.push(item.category);
+				}
 			}
-			todoList.validateAll();
-		});
-		// Category.get({id:"abcde"},function(data){
-		// 	console.log(data);
-		// });
+		};
+
+		todoList.validateAll = function() {
+			angular.forEach(todoList.todos, function(todo) {
+				todoList.validate(todo);
+			});
+			todoList.filterCategories = [FILTER_ANY, FILTER_NONE];
+			angular.forEach(todoList.categories, function(cat) {
+				todoList.filterCategories.push(cat);
+			});
+		};
+
+		// ToDos ==============================================================
 
 		todoList.newTodo = function() {
 			var id = 0;
@@ -200,6 +256,11 @@
 			}
 
 			todoList.todos.push({id: id, text: "", done: false, editable: true, category: category, date: Date.now()});
+		};
+
+		todoList.remove = function(item) { 
+			var index = todoList.todos.indexOf(item);
+			todoList.todos.splice(index, 1);
 		};
 
 		todoList.remaining = function() {
@@ -222,14 +283,77 @@
 			var oldTodos = todoList.todos;
 			todoList.todos = [];
 			angular.forEach(oldTodos, function(todo) {
-				if (!todo.done) todoList.todos.push(todo);
+				if (!todo.done || !todoList.isSelected(todo)) todoList.todos.push(todo);
 			});
 		};
 
-		todoList.remove = function(item) { 
-			var index = todoList.todos.indexOf(item);
-			todoList.todos.splice(index, 1);
-		};
+		// Categories =========================================================
+
+		todoList.addCategory = function() {
+			var name = prompt("Please enter a name for the new category");
+			if(name) {
+				// Add the new category to the listings
+				todoList.categories.push(name);
+				todoList.filterCategories.push(name);
+				//Perform this operation on the server
+				Category.add({id:name}, null);
+			}
+		}
+
+		function _removeCategory(cat) {
+			var index = todoList.categories.indexOf(cat);
+			todoList.categories.splice(index, 1);
+			index = todoList.filterCategories.indexOf(cat);
+			todoList.filterCategories.splice(index, 1);
+		}
+
+		todoList.removeCategory = function() {
+			if(todoList.isSpecialCategory()) {
+				return;
+			}
+			var name = todoList.selectedCategory;
+			//Remove the category from internal listings
+			_removeCategory(name);
+			//Remove every todo with teh given category
+			{
+				var oldTodos = todoList.todos;
+				todoList.todos = [];
+				angular.forEach(oldTodos, function(todo) {
+					if (todo.category != name) todoList.todos.push(todo);
+				});
+			}
+			//Update the selected category
+			todoList.selectedCategory = FILTER_ANY;
+			//Perform these operations on the server
+			Category.remove({id:name}, null);
+		}
+
+		todoList.renameCategory = function() {
+			if(todoList.isSpecialCategory()) {
+				return;
+			}
+			var name = prompt("Please enter a new name for the category '" + todoList.selectedCategory + "'");
+			if(name) {
+				var oldname = todoList.selectedCategory;
+				//Remove the old category from internal listings
+				_removeCategory(oldname);
+				// Add the new category to the listings
+				todoList.categories.push(name);
+				todoList.filterCategories.push(name);
+				//Update the name in every category
+				angular.forEach(todoList.todos, function(todo) {
+					if(todo.category == oldname) {
+						todo.category = name;
+					}
+				});
+				//Update the selected category
+				todoList.selectedCategory = name;
+				//Perform these operations on the server
+				Category.rename({id:oldname}, name);
+			}
+		}
+
+		// Category Filter ====================================================
 
 		todoList.isSelected = function(item) {
 			if(!todoList.selectedCategory || todoList.selectedCategory == FILTER_ANY) {
@@ -244,51 +368,8 @@
 		todoList.isSpecialCategory = function() {
 			return todoList.selectedCategory == FILTER_ANY || todoList.selectedCategory == FILTER_NONE || !todoList.selectedCategory;
 		}
-		todoList.addCategory = function() {
-			var name = prompt("Please enter a new for the new category");
-			if(name) {
-				todoList.categories.push(name);
-				todoList.filterCategories.push(name);
-			}
-		}
-		todoList.removeCategory = function() {
-			if(todoList.isSpecialCategory()) {
-				return;
-			}
-			{
-				var index = todoList.categories.indexOf(todoList.selectedCategory);
-				todoList.categories.splice(index, 1);
-			}
-			{
-				var index = todoList.filterCategories.indexOf(todoList.selectedCategory);
-				todoList.filterCategories.splice(index, 1);
-			}
-			todoList.selectedCategory = FILTER_ANY;
-		}
 
-		todoList.validate = function(item) { 
-			if(!item.text && !item.lastText) {
-				todoList.remove(item);
-			} else if(!item.text) {
-				item.text = item.lastText;
-			} else {
-				item.lastText = item.text;
-				item.title = item.text.split('\n')[0];
-				if(item.category && todoList.categories.indexOf(item.category) === -1)
-					todoList.categories.push(item.category);
-			}
-			todoList.filterCategories = [FILTER_ANY, FILTER_NONE];
-			angular.forEach(todoList.categories, function(cat) {
-				todoList.filterCategories.push(cat);
-			});
-		};
-		todoList.validateAll = function() {
-			angular.forEach(todoList.todos, function(todo) {
-				todoList.validate(todo);
-			});
-		};
-
-		console.log(todoList.categories);
+		reload();
 	})
 	.directive('focusOn', function($timeout) {
 		return {
@@ -330,6 +411,12 @@
 				ng-hide="todoList.isSpecialCategory()"
 				size="30"></ng-md-icon>
 			<ng-md-icon 
+				ng-click="todoList.renameCategory()"
+				icon="mode_edit"
+				title="Rename current cateogry"
+				ng-hide="todoList.isSpecialCategory()"
+				size="30"></ng-md-icon>
+			<ng-md-icon 
 				ng-click="todoList.archive()"
 				icon="archive"
 				title="Archive all done ToDos"
@@ -341,9 +428,11 @@
 				size="30"></ng-md-icon> 
 		</div>
 		<div id="list-content">
-			<div ng-repeat="todo in todoList.todos | filter: todoList.isSelected" ng-class="{'entry-done': todo.done}" class="entry" ng-attr-id="{{ 'entry-' + todo.id }}">
+			<div ng-repeat="todo in todoList.todos | filter: todoList.isSelected" ng-class="{'entry-done': todo.done}" class="entry" ng-attr-id="{{'entry-' + todo.id}}">
 				<div class="entry-checkbox"><input type="checkbox" ng-model="todo.done"/></div>
 				<div class="entry-text">
+					<!--todo.title could also have its own input, but simply putting it as the first line of the description has a better usability
+					<input class="entry-title" type="text" ng-model="todo.title" />-->
 					<div 
 						ng-bind-html="todo.text | nl2br"
 						ng-hide="todo.editable" 
