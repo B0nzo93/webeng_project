@@ -16,8 +16,10 @@ module.exports.delete = function deleteNote(req, res) {
 		res.sendStatus(500, "Database error");
 	} else {
 		var id = req.params.id;
-		var sql = "DELETE FROM todo WHERE id="+id;
-		con.query(sql, function(err, rows) {
+		var sql = squel.delete()
+						.from("todo")
+						.where("id=?", id);
+		con.query(sql.toString(), function(err, rows) {
 			con.release();
 			if (err) {
 				console.error(err);
@@ -58,10 +60,19 @@ module.exports.create = function createNote(req, res) {
 			category_id = "NULL";
 		}
 
-		var sql = "INSERT INTO todo (id, description, title, created, done, category_id) " 
-					+ 'VALUES (NULL,"' + description + '","' + title + '","' + created +  '",' + done + ',' + category_id + ');';
-		console.log(sql);
-		con.query(sql, function(err, rows) {
+		var sql = squel.insert()
+						.into("todo")
+						.set("id", NULL)
+						.set("description", description)
+						.set("title", title)
+						.set("created", created)
+						.set("done", done)
+						.set("category_id", category_id);
+
+		// var sql = "INSERT INTO todo (id, description, title, created, done, category_id) " 
+					// + 'VALUES (NULL,"' + description + '","' + title + '","' + created +  '",' + done + ',' + category_id + ');';
+		console.log("SQL: " + sql.toString());
+		con.query(sql.toString(), function(err, rows) {
 			con.release();
 			if (err) {
 				console.error(err);
