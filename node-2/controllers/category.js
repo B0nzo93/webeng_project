@@ -1,6 +1,5 @@
 module.exports = {};
 
-
 function errorhandler(res, con) {
 	return function(err, rows) {
 		con.release();
@@ -13,14 +12,7 @@ function errorhandler(res, con) {
 	}
 }
 
-
-/**
-* This function selects all categories in the databse extracted from a request.
-*
-* @param {req} request
-* @param {res} response 
-*/
-module.exports.selectAll = function selectAllCategories(req, res) {
+function connectAndQuery(req, res, callback) {
 	module.exports.mysql.getConnection(function(err, con) {
 		if (err) {
 			if(con) {
@@ -29,10 +21,22 @@ module.exports.selectAll = function selectAllCategories(req, res) {
 			console.error(err);
 			res.status(500).send("Database error.");
 		} else {
-			var query = module.exports.squel.select()
-											.from("category");
-			con.query(query.toString(), errorhandler(res, con));
+			callback(req, res, con);
 		}
+	});
+}
+
+/**
+* This function selects all categories in the databse extracted from a request.
+*
+* @param {req} request
+* @param {res} response 
+*/
+module.exports.selectAll = function selectAllCategories(req, res) {
+	connectAndQuery(req, res, function(req, res, con) {
+		var query = module.exports.squel.select()
+										.from("category");
+		con.query(query.toString(), errorhandler(res, con));
 	});
 };
 
@@ -43,20 +47,13 @@ module.exports.selectAll = function selectAllCategories(req, res) {
 * @param {res} response
 */
 module.exports.delete = function deleteCategory(req, res) {
-	module.exports.mysql.getConnection(function(err, con) {
-		if (err) {
-			if(con) {
-				con.release();
-			}
-			console.error(err);
-			res.status(500).send("Database error.");
-		} else {
-			var id = req.params.id;
-			var query = module.exports.squel.delete()
-								.from("category")
-								.where("id=?", id);
-			con.query(query.toString(), errorhandler(res, con));
-		}
+
+	connectAndQuery(req, res, function(req, res, con){
+		var id = req.params.id;
+		var query = module.exports.squel.delete()
+										.from("category")
+										.where("id=?", id);
+		con.query(query.toString(), errorhandler(res, con));
 	});
 };
 
@@ -67,20 +64,14 @@ module.exports.delete = function deleteCategory(req, res) {
 * @param {res} response
 */
 module.exports.create = function createCategory(req, res) {
-	module.exports.mysql.getConnection(function(err, con) {
-		if (err) {
-			if(con) {
-				con.release();
-			}
-			console.error(err);
-			res.status(500).send("Database error.");
-		} else {
-			var name = req.params.name;
-			var query = module.exports.squel.insert().into("category")
-										  	.set("id", null)
-										  	.set("name", name);
-			con.query(query.toString(), errorhandler(res, con));
-		}
+
+	connectAndQuery(req, res, function(req, res, con){
+		var name = req.params.name;	
+		var query = module.exports.squel.insert()
+										.into("category")
+									  	.set("id", null)
+									  	.set("name", name);
+		con.query(query.toString(), errorhandler(res, con));
 	});
 };
 
@@ -91,21 +82,14 @@ module.exports.create = function createCategory(req, res) {
 * @param {res} response
 */
 module.exports.update = function updateCategory(req, res) {
-	module.exports.mysql.getConnection(function(err, con) {
-		if (err) {
-			if(con) {
-				con.release();
-			}
-			console.error(err);
-			res.status(500).send("Database error.");
-		} else {
-			var name = req.params.name;
-			var new_name = req.body.new_name;
-			var query = module.exports.squel.update()
-								.table("category")
-								.set("name", new_name)
-								.where("name=?", name);
-			con.query(query.toString(), errorhandler(res, con));
-		}
+
+	connectAndQuery(req, res, function(req, res, con){
+		var name = req.params.name;
+		var new_name = req.body.new_name;
+		var query = module.exports.squel.update()
+										.table("category")
+										.set("name", new_name)
+										.where("name=?", name);
+		con.query(query.toString(), errorhandler(res, con));
 	});
 };
