@@ -32,7 +32,7 @@ app.put('/categories/:name', function (req, res) {
 app.post('/categories/:name', function (req, res) {
 	updateCategory(req, res);
 });
-app.post('/notes/', function (req, res) {
+app.post('/notes/:id', function (req, res) {
 	updateNote(req, res);
 });
 
@@ -42,17 +42,19 @@ function deleteNote(req, res) {
 		if(con) {
 			con.release();
 		}
-		//errorCallback(err);
+		console.error(err);
+		res.sendStatus(500, "Database error");
 	} else {
 		var id = req.params.id;
 		var sql = "DELETE FROM todo WHERE id="+id;
 		con.query(sql, function(err, rows) {
 			con.release();
 			if (err) {
-				//errorCallback(err);
+				console.error(err);
+				res.sendStatus(404);
 			} else {
-				//successCallback(rows);
-				res.json(rows);
+				res.sendStatus(200);
+				res.status.json(rows);
 			}
 		});
 	}
@@ -65,17 +67,18 @@ function deleteCategory(req, res) {
 		if(con) {
 			con.release();
 		}
-		//errorCallback(err);
+		console.error(err);
+		res.sendStatus(500, "Database error");
 	} else {
 		var id = req.params.id
 		var sql = "DELETE FROM category WHERE id="+id
 		con.query(sql, function(err, rows) {
 			con.release();
 			if (err) {
-				//errorCallback(err);
+				console.error(err);
+				res.sendStatus(404);
 			} else {
-				//successCallback(rows);
-				res.json(rows);
+				res.status(200).json(rows);
 			}
 		});
 	}
@@ -88,7 +91,8 @@ function createNote(req, res) {
 		if(con) {
 			con.release();
 		}
-		//errorCallback(err);
+		console.error(err);
+		res.sendStatus(500, "Database error");
 	} else {
 		var title = req.body.title;
 		var description = req.body.description;
@@ -96,17 +100,21 @@ function createNote(req, res) {
 		var done = req.body.done;
 		var category_id = req.body.category_id;
 
+		// check if there was given a category id, else add uncategorized note
+		if (category_id || category_id == "") {
+			category_id = "NULL";
+		}
+
 		var sql = "INSERT INTO todo (id, description, title, created, done, category_id) " 
 					+ 'VALUES (NULL,"' + description + '","' + title + '","' + created +  '",' + done + ',' + category_id + ');';
 		console.log(sql);
 		con.query(sql, function(err, rows) {
 			con.release();
 			if (err) {
-				console.log(err);
-				//errorCallback(err);
+				console.error(err);
+				res.sendStatus(400, "Check the type and structure of your request");
 			} else {
-				//successCallback(rows);
-				res.json(rows);
+				res.status(200).json(rows);
 			}
 		});
 	}
@@ -119,18 +127,18 @@ function createCategory(req, res) {
 		if(con) {
 			con.release();
 		}
-		//errorCallback(err);
+		console.error(err);
+		res.sendStatus(500, "Database error");
 	} else {
 		var name = req.params.name;
 		var sql = 'INSERT INTO category (id, name) VALUES (NULL,"' + String(name) + '");';
 		con.query(sql, function(err, rows) {
 			con.release();
 			if (err) {
-				console.log(err);
-				//errorCallback(err);
+				console.error(err);
+				res.sendStatus(400, "Check the type and structure of your request");
 			} else {
-				//successCallback(rows);
-				res.json(rows);
+				res.status(200).json(rows);
 			}
 		});
 	}
@@ -144,15 +152,16 @@ function selectAllNotes(req, res) {
 		if(con) {
 			con.release();
 		}
-		//errorCallback(err);
+		console.error(err);
+		res.sendStatus(500, "Database error");
 	} else {
 		con.query("SELECT t.id, t.title, t.description, t.created, t.done, c.id as category_id, c.name as category_name FROM todo t JOIN category c ON t.category_id = c.id", function(err, rows) {
 			con.release();
 			if (err) {
-				//errorCallback(err);
+				console.error(err);
+				res.sendStatus(404);
 			} else {
-				//successCallback(rows);
-				res.json(rows);
+				res.status(200).json(rows);
 			}
 		});
 	}
@@ -165,7 +174,8 @@ function updateCategory(req, res) {
 		if(con) {
 			con.release();
 		}
-		//errorCallback(err);
+		console.error(err);
+		res.sendStatus(500, "Database error");
 	} else {
 		var id = req.body.id;
 		var new_name = req.body.name;
@@ -174,11 +184,10 @@ function updateCategory(req, res) {
 		con.query(sql, function(err, rows) {
 			con.release();
 			if (err) {
-				console.log(err);
-				//errorCallback(err);
+				console.error(err);
+				res.sendStatus(404);
 			} else {
-				//successCallback(rows);
-				res.json(rows);
+				res.status(200).json(rows);
 			}
 		});
 	}
@@ -191,9 +200,10 @@ function updateNote(req, res) {
 		if(con) {
 			con.release();
 		}
-		//errorCallback(err);
+		console.error(err);
+		res.sendStatus(500, "Database error");
 	} else {
-		var id = req.body.id;
+		var id = req.params.id;
 		var title = req.body.title;
 		var description = req.body.description;
 		var created = req.body.created;
@@ -209,11 +219,10 @@ function updateNote(req, res) {
 		con.query(sql, function(err, rows) {
 			con.release();
 			if (err) {
-				console.log(err);
-				//errorCallback(err);
+				console.error(err);
+				res.sendStatus(404);
 			} else {
-				//successCallback(rows);
-				res.json(rows);
+				res.status(200).json(rows);
 			}
 		});
 	}
