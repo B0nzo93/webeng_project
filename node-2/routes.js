@@ -6,6 +6,9 @@ module.exports = function(app, mysql, squel) {
 	category.squel = squel;
 	note.squel = squel;
 
+	app.get('/categories', function (req, res) {
+		category.selectAll(req, res);
+	});
 	app.delete('/categories/:id', function (req, res) {
 		category.delete(req, res);
 	});
@@ -22,7 +25,7 @@ module.exports = function(app, mysql, squel) {
 	app.delete('/notes/:id', function (req, res) {
 		note.delete(req, res);
 	});
-	app.put('/notes/', function (req, res) {
+	app.put('/notes', function (req, res) {
 		note.create(req, res);
 	});
 	app.post('/notes/:id', function (req, res) {
