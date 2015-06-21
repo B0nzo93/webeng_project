@@ -42,7 +42,7 @@
 										'<h3 class="panel-title">' + todos[i].category_name +'</h3>' +
 										'<div class="text-right">' +
 										'<div class="btn-group">' +
-										'<button type="button" class="btn btn-primary" onClick="add(' +  todos[i] + ')" >New category note</button>' +
+										'<button type="button" class="btn btn-primary" onClick="addNote(\'' + todos[i].category_name + '\')">New category note</button>' +
 										'<button type="button" class="btn btn-danger" onClick="deleteCategory(' +  todos[i].category_id + ')" >Delete</button>' +
 										'</div>' +
 										'</div>' +
@@ -73,9 +73,24 @@
 			}
 		}
 		
-
 		function addCategory() {
+			var name = prompt("Enter name");
+			if(name) {
+				$.ajax({
+					url: 'categories/' + name, 
+					type: 'PUT',
+					success: refreshData()
+				});	
+			}
+		}
 
+		function addNote(category) {
+			$("#modal-new-note").modal();
+			/*$.ajax({
+				url: 'notes', 
+				type: 'PUT',
+				success: refreshData()
+			});*/
 		}
 
 		function deleteCategory(category_id) {
@@ -91,7 +106,6 @@
     			url: '/notes/ ' + note_id,
     			type: 'DELETE',
     			success: refreshData()
-    			}
     	});
 		}
 
@@ -108,8 +122,8 @@
 			<div class="container">
 			<div class="text-right">
 				<div class="btn-group">
-					<button type="button" class="btn btn-primary">New uncategorised note</button>
-					<button type="button" class="btn btn-primary">New category</button>
+					<button type="button" class="btn btn-primary" onClick="addNote(null)">New uncategorised note</button>
+					<button type="button" class="btn btn-primary" onClick="addCategory()">New category</button>
 					<button type="button" class="btn btn-primary" onClick="displayCategories()">Load Categories</button>
 					<button type="button" class="btn btn-primary" onClick="displayNotes()">Load Notes</button>
 				</div>
@@ -120,7 +134,32 @@
 		<div id="content" class="container">
 		</div>
 	</div>
-	
+
+	<!-- Modal -->
+	<div class="modal fade" id="modal-new-note" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title" id="myModalLabel">Modal title</h4>
+				</div>
+				<div class="modal-body">
+					new Note
+					<input class="form-control" type="text" placeholder="new Node">
+					new ID
+					<input class="form-control" type="text" placeholder="new Node">
+					new XY
+					<input class="form-control" type="text" placeholder="new Node">
+
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-primary">Save changes</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
