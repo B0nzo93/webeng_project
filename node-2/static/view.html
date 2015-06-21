@@ -19,7 +19,6 @@
 	<script src="js/jquery-1.11.3.js"></script>
 	<script>
 		var categories = [];
-		var today = new Date();
 		var todos = [];
 		
 		function refreshData() {
@@ -52,7 +51,6 @@
 
 		function generateCategory(category_id, category_name) {
 				if (!($("#category" + category_id).length)) {
-
 					var output = '<div id="category' + category_id + '" class="panel panel-default">' +
 										'<div class="panel-heading">' +
 										'<h3 class="panel-title"><b>' + category_name +'</b></h3>' +
@@ -63,27 +61,37 @@
 						output += '(null)">New uncategorised note</button>';
 					} else {
 						output += '(\'' + category_id + '\')">New category note</button>' +
-						'<button type="button" class="btn btn-danger" onClick="deleteCategory(' +  category_id + ')" >Delete</button>';
+						'<button type = "button" class="btn btn-primary" onClick="buildDialogCategoryEdit('+ category_id +')">Edit</button>' +
+						'<button type="button" class="btn btn-danger" onClick = "deleteCategory(' +  category_id + ')" >Delete</button>';
 					};
 					output +=			'</div>' +
 										'</div>' +
 										'</div>' +
 										'</div>';
-					$("#content").append(output)
+					$("#content").append(output);
 				}
 		}
 
 		function displayNotes() {
 			for (var i = 0; i < todos.length; i++) {
-				$("#category" + todos[i].category_id).append('<div class="panel-body">' +
-					'<div class="panel panel-default">' +
-						'<div class="panel-heading">' +
-							'<h3 class="panel-title"><b>' + todos[i].title +  '</b> (created ' + todos[i].created + ')</h3>' +
+				var output = '<div class="panel-body">' +
+					'<div class="panel panel-default">';
+				if (todos[i].done == 0) {
+					output += '<div style="background-color: orange" class="panel-heading">';
+				} else {
+					output += '<div class="panel-heading">';
+				}
+				console.log(todos[i].created);
+				output +=	'<h3 class="panel-title"> <b>' + todos[i].title + '</b> (created ' + todos[i].created.split("T")[0] + ')</h3>' +
 							'<div class="text-right">' +
-							'<div class="btn-group">' +
-								'<button type="button" class="btn btn-success" data-toggle="button" aria-pressed="false" autocomplete="off"> DONE </button>' +
-								'<button type="button" class="btn btn-primary" onClick=\'buildDialogEdit(' + JSON.stringify(todos[i]) + ')\' >Edit</button>' +
-								'<button type="button" class="btn btn-danger" onClick="deleteNote(' +  todos[i].id + ')" >Delete</button>' +
+							'<div class="btn-group">';
+				if (todos[i].done == 0) {
+					output += '<button type="button" class="btn btn-success" onClick = \'done(' +  JSON.stringify(todos[i]) + ')\' > DONE </button>';
+				} else {
+					output += '<button type="button" class="btn btn-danger" onClick = \'done(' +  JSON.stringify(todos[i]) + ')\' > UNDO </button>';
+				}
+				output += '<button type="button" class="btn btn-primary" onClick = \'buildDialogEdit(' + JSON.stringify(todos[i]) + ')\' >Edit</button>' +
+								'<button type="button" class="btn btn-danger" onClick = "deleteNote(' +  todos[i].id + ')" >Delete</button>' +
 							'</div>' +
 							'</div>' +
 							'</div>' +
@@ -91,14 +99,18 @@
 							todos[i].description +
 						'</div>' +
 					'</div>' +
-				'</div>');
+				'</div>';
+				$("#category" + todos[i].category_id).append(output);
 			}
 		}
 
 		function jsDate2HTML(date) {
+			var minutes = date.getMinutes();
+			var hour = (date.getHours()+1);
 			var day = ("0" + date.getDate()).slice(-2);
 			var month = ("0" + (date.getMonth() + 1)).slice(-2);
-			return date.getFullYear()+"-"+(month)+"-"+(day);
+			var year = date.getFullYear();
+			return (day)+"-"+(month)+"-"+(year);
 		}
 
 		function buildDialogAdd(category_id) {
@@ -107,6 +119,7 @@
 			$("#description").val("");
 			$("#date").val(jsDate2HTML(new Date()));
 			$("#category_id").val(category_id);
+			$("#modal-new-note-title").val("Add Note");
 			$("#btn-submit").html("Add Note");
 			$("#btn-submit").unbind("click");
 			$("#btn-submit").bind("click", addNote);
@@ -119,14 +132,28 @@
 			$("#description").val(note.description);
 			$("#date").val(jsDate2HTML(new Date(note.created)));
 			$("#category_id").val(note.category_id);
+			$("#modal-new-note-title").val("Edit Note");
 			$("#btn-submit").html("Edit Note");
 			$("#btn-submit").unbind("click");
 			$("#btn-submit").bind("click", editNote);
 			$("#modal-new-note").modal();
 		}
 
-		function buildDialogCategory() {
+		function buildDialogCategoryAdd() {
 			$("#newcategory_name").val("");
+			$("#btn-submit-category").html("Add Category");
+			$("#btn-submit-category").unbind("click");
+			$("#btn-submit-category").bind("click", addCategory);
+			$("#modal-new-category").modal();
+		}
+
+		function buildDialogCategoryEdit(category_id) {
+			$("#newcategory_name").val("");
+			console.log(category_id);
+			$("#newcategory_id").val(category_id);
+			$("#btn-submit-category").html("Edit Category");
+			$("#btn-submit-category").unbind("click");
+			$("#btn-submit-category").bind("click", editCategory);
 			$("#modal-new-category").modal();
 		}
 
@@ -140,7 +167,21 @@
 					$("#modal-new-category").modal('hide');
 				}
 			});
+		}
 
+		function editCategory() {
+			var id = $("#newcategory_id").val();
+			var category_name = $("#newcategory_name").val();
+			$.ajax({
+				data: JSON.stringify({new_name:category_name}),
+				processData: false,
+				url: '/categories/' + id,
+				method: 'POST',
+				success: function () {
+					refreshData();
+					$("#modal-new-category").modal('hide');
+				}
+			});
 		}
 
 		function addNote() {
@@ -167,8 +208,7 @@
 			var description = $('#description').val();
 			var created = new Date($('#date').val()).toISOString();
 			var category_id = $("#category_id").val();
-			console.log(category_id);
-			var data = {"id": id, "title":title, "description":description, "created":created, "done":0, "category_id":category_id};
+			var data = {"id":id, "title":title, "description":description, "created":created, "done":0, "category_id":category_id};
 			$.ajax({
 				data: JSON.stringify(data),
 				processData: false,
@@ -182,11 +222,11 @@
 		}
 
 		function done(note) {
-			var data = {"id": id, "title":title, "description":description, "created":created, "done":0, "category_id":category_id};
+			note.done = !note.done;
 			$.ajax({
-				data: JSON.stringify(data),
+				data: JSON.stringify(note),
 				processData: false,
-				url: '/notes/' + id,
+				url: '/notes/' + note.id,
 				method: 'POST',
 				success: function () {
 					refreshData();
@@ -224,12 +264,11 @@
 			<div class="container">
 			<div class="text-right">
 				<div class="btn-group">
-					<button type="button" class="btn btn-primary" onClick="buildDialogCategory()">New category</button>
+					<button type="button" class="btn btn-primary" onClick="buildDialogCategoryAdd()">New category</button>
 				</div>
 			</div>
 			</div>
 		</div>
-		
 		<div id="content" class="container">
 		</div>
 	</div>
@@ -240,7 +279,7 @@
 			<div class="modal-content">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-					<h4 class="modal-title" id="myModalLabel">Modal title</h4>
+					<h4 class="modal-title" id="modal-new-note-title">Title</h4>
 				</div>
 				<div class="modal-body">
 					Title of Note
@@ -265,14 +304,15 @@
 		    <div class="modal-content">
 		    	<div class="modal-header">
 		        	<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-		        <h4 class="modal-title">Add Category Name</h4>
+		        <h4 class="modal-title">Category Name</h4>
 		      </div>
 		      <div class="modal-body">
-		      		<input id = "newcategory_name" class="form-control" type="text" placeholder="New Category">
+		      		<input id="newcategory_name" class="form-control" type="text" placeholder="Name of Category">
+		      		<input type="hidden" id="newcategory_id"/>
 		      </div>
 		      	<div class="modal-footer">
 		        	<button type="button" class="btn btn-default" data-dismiss="modal">Dismiss</button>
-		        	<button type="button" class="btn btn-primary" onClick = "addCategory()" >Add Category</button>
+		        	<button type="button" id="btn-submit-category" class="btn btn-primary" ></button>
 		    	</div>
 		</div><!-- /.modal-content -->
 	</div><!-- /.modal-dialog -->
