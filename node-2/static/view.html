@@ -18,49 +18,70 @@
     <![endif]-->
 	<script src="js/jquery-1.11.3.js"></script>
 	<script>
+		var categories = [];
 		var today = new Date();
 		var todos = [];
 		
 		function refreshData() {
+			var scroll = $(window).scrollTop();
 			$("#content").empty();
-			$.getJSON("/notes", function(data) {
-				todos = [];
+			$.getJSON("/categories", function(data) {
+				categories = [];
 				$.each(data, function(idx, obj){ 
-					todos.push(obj);
+					categories.push(obj);
 				});
 				displayCategories();
-				displayNotes();
+				
+				$.getJSON("/notes", function(data) {
+					todos = [];
+					$.each(data, function(idx, obj){ 
+						todos.push(obj);
+					});
+					displayNotes();
+					$(window).scrollTop(scroll);
+				});
 			});
 		}
 		
 		function displayCategories() {
-			for (var i = 0; i < todos.length; i++) {
-				var category_id = "category" + todos[i].category_id
-				if (!($("#category" + todos[i].category_id).length)) {
-					$("#content").append('<div id="category' + todos[i].category_id + '" class="panel panel-default">' +
-										'<div class="panel-heading">' +
-										'<h3 class="panel-title">' + todos[i].category_name +'</h3>' +
-										'<div class="text-right">' +
-										'<div class="btn-group">' +
-										'<button type="button" class="btn btn-primary" onClick="addNote(\'' + todos[i].category_name + '\')">New category note</button>' +
-										'<button type="button" class="btn btn-danger" onClick="deleteCategory(' +  todos[i].category_id + ')" >Delete</button>' +
-										'</div>' +
-										'</div>' +
-										'</div>' +
-										'</div>');
-				}
+			generateCategory(null, "uncategorised");
+			for (var i = 0; i < categories.length; i++) {
+				generateCategory(categories[i].id, categories[i].name);
 			}
 		}
-		
+
+		function generateCategory(category_id, category_name) {
+				if (!($("#category" + category_id).length)) {
+
+					var output = '<div id="category' + category_id + '" class="panel panel-default">' +
+										'<div class="panel-heading">' +
+										'<h3 class="panel-title"><b>' + category_name +'</b></h3>' +
+										'<div class="text-right">' +
+										'<div class="btn-group">' + 
+										'<button type="button" class="btn btn-primary" onClick="buildDialogAdd';
+					if (category_id == null) {
+						output += '(null)">New uncategorised note</button>';
+					} else {
+						output += '(\'' + category_id + '\')">New category note</button>' +
+						'<button type="button" class="btn btn-danger" onClick="deleteCategory(' +  category_id + ')" >Delete</button>';
+					};
+					output +=			'</div>' +
+										'</div>' +
+										'</div>' +
+										'</div>';
+					$("#content").append(output)
+				}
+		}
+
 		function displayNotes() {
 			for (var i = 0; i < todos.length; i++) {
 				$("#category" + todos[i].category_id).append('<div class="panel-body">' +
 					'<div class="panel panel-default">' +
 						'<div class="panel-heading">' +
-							'<h3 class="panel-title">' + todos[i].title +  ' (created ' + todos[i].created + ')</h3>' +
+							'<h3 class="panel-title"><b>' + todos[i].title +  '</b> (created ' + todos[i].created + ')</h3>' +
 							'<div class="text-right">' +
 							'<div class="btn-group">' +
-								'<button type="button" class="btn btn-primary" onClick="add(' +  todos[i] + ')" >Edit</button>' +
+								'<button type="button" class="btn btn-primary" onClick=\'buildDialogEdit(' + JSON.stringify(todos[i]) + ')\' >Edit</button>' +
 								'<button type="button" class="btn btn-danger" onClick="deleteNote(' +  todos[i].id + ')" >Delete</button>' +
 							'</div>' +
 							'</div>' +
@@ -72,41 +93,106 @@
 				'</div>');
 			}
 		}
-		
-		function addCategory() {
-			var name = prompt("Enter name");
-			if(name) {
-				$.ajax({
-					url: 'categories/' + name, 
-					type: 'PUT',
-					success: refreshData()
-				});	
-			}
+
+		function jsDate2HTML(date) {
+			var day = ("0" + date.getDate()).slice(-2);
+			var month = ("0" + (date.getMonth() + 1)).slice(-2);
+			return date.getFullYear()+"-"+(month)+"-"+(day);
 		}
 
-		function addNote(category) {
+		function buildDialogAdd(category_id) {
+			$("#note_id").val("");
+			$("#title").val("");
+			$("#description").val("");
+			$("#date").val(jsDate2HTML(new Date()));
+			$("#category_id").val(category_id);
+			$("#btn-submit").html("Add Note");
+			$("#btn-submit").unbind("click");
+			$("#btn-submit").bind("click", addNote);
 			$("#modal-new-note").modal();
-			/*$.ajax({
-				url: 'notes', 
+		}
+
+		function buildDialogEdit(note) {
+			$("#note_id").val(note.id);
+			$("#title").val(note.title);
+			$("#description").val(note.description);
+			$("#date").val(jsDate2HTML(new Date(note.created)));
+			$("#category_id").val(category_id);
+			$("#btn-submit").html("Edit Note");
+			$("#btn-submit").unbind("click");
+			$("#btn-submit").bind("click", editNote);
+			$("#modal-new-note").modal();
+		}
+
+		function buildDialogCategory() {
+			$("#newcategory_name").val("");
+			$("#modal-new-category").modal();
+		}
+
+		function addCategory() {
+			var name = $("#newcategory_name").val();
+			$.ajax({
+				url: '/categories/' + name,
 				type: 'PUT',
-				success: refreshData()
-			});*/
+				success: function() {
+					refreshData();
+					$("#modal-new-category").modal('hide');
+				}
+			});
+
+		}
+
+		function addNote() {
+			var title = $("#title").val();
+			var description = $('#description').val();
+			var created = new Date($('#date').val()).toISOString();
+			var category_id = $("#category_id").val();
+			var data = {"title":title, "description":description, "created":created, "done":0, "category_id":category_id};
+			$.ajax({
+				data: JSON.stringify(data),
+				processData: false,
+				url: '/notes/',
+				method: 'PUT',
+				success: function () {
+					refreshData();
+					$("#modal-new-note").modal('hide');
+				}
+			});
+		}
+
+		function editNote() {
+			var id = $("#note_id").val();
+			var title = $("#title").val();
+			var description = $('#description').val();
+			var created = new Date($('#date').val()).toISOString();
+			var category_id = $("#category_id").val();
+			var data = {"id": id, "title":title, "description":description, "created":created, "done":0, "category_id":category_id};
+			$.ajax({
+				data: JSON.stringify(data),
+				processData: false,
+				url: '/notes/' + id,
+				method: 'POST',
+				success: function () {
+					refreshData();
+					$("#modal-new-note").modal('hide');
+				}
+			});
 		}
 
 		function deleteCategory(category_id) {
 			$.ajax({
-    			url: '/category/ ' + category_id,
+    			url: '/categories/' + category_id,
     			type: 'DELETE',
-    			success: refreshData()
-		});
+    			success: refreshData
+			});
 		}
 
 		function deleteNote(note_id) {
-     			$.ajax({
-    			url: '/notes/ ' + note_id,
+ 			$.ajax({
+    			url: '/notes/' + note_id,
     			type: 'DELETE',
-    			success: refreshData()
-    	});
+    			success: refreshData
+	    	});
 		}
 
 		$(function() {
@@ -122,10 +208,7 @@
 			<div class="container">
 			<div class="text-right">
 				<div class="btn-group">
-					<button type="button" class="btn btn-primary" onClick="addNote(null)">New uncategorised note</button>
-					<button type="button" class="btn btn-primary" onClick="addCategory()">New category</button>
-					<button type="button" class="btn btn-primary" onClick="displayCategories()">Load Categories</button>
-					<button type="button" class="btn btn-primary" onClick="displayNotes()">Load Notes</button>
+					<button type="button" class="btn btn-primary" onClick="buildDialogCategory()">New category</button>
 				</div>
 			</div>
 			</div>
@@ -144,21 +227,40 @@
 					<h4 class="modal-title" id="myModalLabel">Modal title</h4>
 				</div>
 				<div class="modal-body">
-					new Note
-					<input class="form-control" type="text" placeholder="new Node">
-					new ID
-					<input class="form-control" type="text" placeholder="new Node">
-					new XY
-					<input class="form-control" type="text" placeholder="new Node">
-
+					Title of Note
+					<input id = "title" class="form-control" type="text" placeholder="Title of Note">
+					Description
+					<input id = "description" class="form-control" type="text" placeholder="Description of Note">
+					Date
+					<input id = "date" type = "date" >
+					<input type = "hidden" id = "note_id" />
+					<input type ="hidden" id ="category_id" />
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-					<button type="button" class="btn btn-primary">Save changes</button>
+					<button type="button" class ="btn btn-default" data-dismiss="modal">Dismiss</button>
+					<button type="button" id="btn-submit" class="btn btn-primary"></button>
 				</div>
 			</div>
 		</div>
 	</div>
+
+	<div class="modal fade" id = "modal-new-category">
+		<div class="modal-dialog">
+		    <div class="modal-content">
+		    	<div class="modal-header">
+		        	<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+		        <h4 class="modal-title">Add Category Name</h4>
+		      </div>
+		      <div class="modal-body">
+		      		<input id = "newcategory_name" class="form-control" type="text" placeholder="New Category">
+		      </div>
+		      	<div class="modal-footer">
+		        	<button type="button" class="btn btn-default" data-dismiss="modal">Dismiss</button>
+		        	<button type="button" class="btn btn-primary" onClick = "addCategory()" >Add Category</button>
+		    	</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 
 	<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
