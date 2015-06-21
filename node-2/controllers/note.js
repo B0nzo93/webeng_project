@@ -16,17 +16,17 @@ module.exports.delete = function deleteNote(req, res) {
 		res.sendStatus(500, "Database error");
 	} else {
 		var id = req.params.id;
-		var sql = squel.delete()
+		var query = module.exports.squel.delete()
 						.from("todo")
 						.where("id=?", id);
-		con.query(sql.toString(), function(err, rows) {
+
+		con.query(query.toString(), function(err, rows) {
 			con.release();
 			if (err) {
 				console.error(err);
 				res.sendStatus(404);
 			} else {
-				res.sendStatus(200);
-				res.status.json(rows);
+				res.status(200).json(rows);
 			}
 		});
 	}
@@ -60,17 +60,13 @@ module.exports.create = function createNote(req, res) {
 			category_id = "NULL";
 		}
 
-		var sql = squel.insert()
+		var sql = module.exports.squel.insert()
 						.into("todo")
-						.set("id", NULL)
 						.set("description", description)
 						.set("title", title)
 						.set("created", created)
 						.set("done", done)
 						.set("category_id", category_id);
-
-		// var sql = "INSERT INTO todo (id, description, title, created, done, category_id) " 
-					// + 'VALUES (NULL,"' + description + '","' + title + '","' + created +  '",' + done + ',' + category_id + ');';
 		console.log("SQL: " + sql.toString());
 		con.query(sql.toString(), function(err, rows) {
 			con.release();
@@ -99,9 +95,22 @@ module.exports.selectAll = function selectAllNotes(req, res) {
 			con.release();
 		}
 		console.error(err);
-		res.sendStatus(500, "Database error");
+		res.status(500).send("Database error");
+		// res.sendStatus(500, "Database error");
 	} else {
-		con.query("SELECT t.id, t.title, t.description, t.created, t.done, c.id as category_id, c.name as category_name FROM todo t JOIN category c ON t.category_id = c.id", function(err, rows) {
+		var query = module.exports.squel.select()
+										.from("todo", "t")
+										.left_join("category", "c", "t.category_id = c.id")
+										.field("t.id")
+										.field("t.title")
+										.field("t.description")
+										.field("t.created")
+										.field("t.done")
+										.field("c.id", "category_id")
+										.field("c.name", "category_name");
+		console.log("SQL: " + query.toString());
+		con.query(query.toString(), function(err, rows) {
+		// con.query("SELECT t.id, t.title, t.description, t.created, t.done, c.id as category_id, c.name as category_name FROM todo t JOIN category c ON t.category_id = c.id", function(err, rows) {
 			con.release();
 			if (err) {
 				console.error(err);
