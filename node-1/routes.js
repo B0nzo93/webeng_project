@@ -81,12 +81,8 @@ module.exports = function(app, db){
 						req.params.name,
 						errorhandler(res),
 						function(rows) {
-							var names = [];
-							for (i in rows) {
-								names.push(rows[i].name);
-							}
-							console.log("Response: [" + names + "]");
-							res.status(200).json(names);
+							console.log("Response: " + JSON.stringify(rows));
+							res.status(200).json(rows);
 						}
 					);
 				}
