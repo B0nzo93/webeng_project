@@ -22,6 +22,9 @@ module.exports = function(app, mysql, squel) {
 	app.get('/notes', function (req, res) {
 		note.selectAll(req, res);
 	});
+	app.get('/notes/:id', function (req, res) {
+		note.select(req, res);
+	});
 	app.delete('/notes/:id', function (req, res) {
 		note.delete(req, res);
 	});

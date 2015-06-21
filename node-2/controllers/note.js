@@ -34,6 +34,43 @@ module.exports.delete = function deleteNote(req, res) {
 
 
 /**
+* This function gets a certain note in the databse extracted from a request.
+*
+* @param {req} request
+* @param {res} response 
+*/
+module.exports.select = function selectNote(req, res) {
+	module.exports.mysql.getConnection(function(err, con) {
+	if (err) {
+		if(con) {
+			con.release();
+		}
+		console.error(err);
+		res.sendStatus(500, "Database error");
+	} else {
+		var id = req.params.id;
+		var query = module.exports.squel.select()
+						.from("todo")
+						.where("id=?", id);
+		con.query(query.toString(), function(err, rows) {
+			con.release();
+			if (err) {
+				console.error(err);
+				res.sendStatus(404);
+			} else {
+				if (rows.length == 1) {
+					res.status(200).json(rows[0]);
+				} else {
+					res.status(400).send("Invalid id");
+				}
+			}
+		});
+	}
+	});
+};
+
+
+/**
 * This function deletes a note in the databse extracted from a request.
 *
 * @param {req} request
@@ -81,7 +118,8 @@ module.exports.create = function createNote(req, res) {
 
 
 /**
-* This function selects all notes in the databse extracted from a request.
+* This function selects all notes and their corresponding category ids and names
+* in the databse extracted from a request.
 *
 * @param {req} request
 * @param {res} response 
