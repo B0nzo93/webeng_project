@@ -81,7 +81,11 @@ angular
 			}
 
 			// and update the db
-			ToDo.update({id:item.id}, item, null, function(error) {
+			ToDo.update({id:item.id}, item, function(data) {
+				for(key in data) {
+					item[key] = data[key];
+				} 
+			}, function(error) {
 				item.text = item.lastText;
 				todoList.logError(error);
 			});
