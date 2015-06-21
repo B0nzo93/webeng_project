@@ -19,7 +19,6 @@ module.exports.delete = function deleteNote(req, res) {
 		var query = module.exports.squel.delete()
 						.from("todo")
 						.where("id=?", id);
-
 		con.query(query.toString(), function(err, rows) {
 			con.release();
 			if (err) {
@@ -67,7 +66,6 @@ module.exports.create = function createNote(req, res) {
 						.set("created", created)
 						.set("done", done)
 						.set("category_id", category_id);
-		console.log("SQL: " + sql.toString());
 		con.query(sql.toString(), function(err, rows) {
 			con.release();
 			if (err) {
@@ -96,7 +94,6 @@ module.exports.selectAll = function selectAllNotes(req, res) {
 		}
 		console.error(err);
 		res.status(500).send("Database error");
-		// res.sendStatus(500, "Database error");
 	} else {
 		var query = module.exports.squel.select()
 										.from("todo", "t")
@@ -108,9 +105,7 @@ module.exports.selectAll = function selectAllNotes(req, res) {
 										.field("t.done")
 										.field("c.id", "category_id")
 										.field("c.name", "category_name");
-		console.log("SQL: " + query.toString());
 		con.query(query.toString(), function(err, rows) {
-		// con.query("SELECT t.id, t.title, t.description, t.created, t.done, c.id as category_id, c.name as category_name FROM todo t JOIN category c ON t.category_id = c.id", function(err, rows) {
 			con.release();
 			if (err) {
 				console.error(err);
@@ -146,13 +141,15 @@ module.exports.update = function updateNote(req, res) {
 		var done = req.body.done;
 		var category_id = req.body.category_id;
 
-		var sql = 'UPDATE todo SET title="' + title + '", ' +
-										'description="'+ description + '", ' +
-										'created="' + created +'", ' +
-										'done=' + done + ', ' +
-										'category_id=' + category_id + ' WHERE id=' + id;
-		console.log(sql);
-		con.query(sql, function(err, rows) {
+		var query = module.exports.squel.update()
+										.table("todo")
+										.set("title", title)
+										.set("description", description)
+										.set("created", created)
+										.set("done", done)
+										.set("category_id", category_id)
+										.where("id=?", id);		
+		con.query(query.toString(), function(err, rows) {
 			con.release();
 			if (err) {
 				console.error(err);
