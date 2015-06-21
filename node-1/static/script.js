@@ -34,6 +34,12 @@ angular
 
 	// Load/Validate model ================================================
 
+	function fixToDoData(todo) {
+		todo.date = new Date(todo.date);
+		todo.text = (todo.title+"\n"+todo.description);
+		todo.done = todo.done ? true : false; //explicit cast required for angular
+	}
+
 	// Reload all Category and ToDo DAOs from the server and revalidate
 	function reload() {
 		Category.query(function(data){
@@ -49,9 +55,7 @@ angular
 		ToDo.query(function(data){
 			todoList.todos = [];
 			for (var i = 0; i < data.length; i++) {
-				data[i].date = new Date(data[i].date);
-				data[i].text = (data[i].title+"\n"+data[i].description);
-				data[i].done = data[i].done ? true : false; //explicit cast required for angular
+				fixToDoData(data[i]);
 				todoList.todos.push(data[i]);
 			}
 			todoList.validateAll();
@@ -85,6 +89,7 @@ angular
 				for(key in data) {
 					item[key] = data[key];
 				} 
+				fixToDoData(item);
 			}, function(error) {
 				item.text = item.lastText;
 				todoList.logError(error);
