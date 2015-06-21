@@ -156,12 +156,23 @@
 	<script src="https://cdn.jsdelivr.net/angular-material-icons/0.4.0/angular-material-icons.min.js"></script>
 	<script src="elastic.js"></script>
 	<script>
-	var FILTER_ANY = "any";
-	var FILTER_NONE = "none";
-
 	angular
 	.module('todoApp', ['ngResource', 'ngSanitize', 'monospaced.elastic', 'ngMdIcons'])
-	.controller('TodoListController', function($resource) {
+	.controller('TodoListController', function($resource, $scope) {
+
+		// Local Model ========================================================
+
+		var todoList = this;
+		todoList.todos = []; // list of all todos
+		todoList.categories = []; // list of all existing categories
+		todoList.filterCategories = []; // list of all categories used for filtering, including FILTER_ANY and FILTER_NONE
+
+		var FILTER_ANY = "any"; // display all todos
+		var FILTER_NONE = "none"; // display todos with category <null>
+		todoList.selectedCategory = null; // currently displayed category, or FILTER_ANY or FILTER_NONE
+
+		// DAOs for reading/writing server model ==============================
+
 		var Category = $resource('categories/:id', {}, {
 			get: {method:'GET', isArray:true},
 			query: {method:'GET', isArray:true},
@@ -169,27 +180,17 @@
 			rename: {method:'POST'},
 			remove: {method:'DELETE'}
 		});
-		// var ToDo = $resource('notes/:id', {}, {
-		// 	query: {method:'GET', isArray:true},
-		// 	get: {method:'GET'},
-		// 	add: {method:'PUT'},
-		// 	update: {method:'POST'},
-		// 	delete: {method:'DELETE'}
-		// });
+		var ToDo = $resource('notes/:id', {}, {
+			query: {method:'GET', isArray:true},
+			get: {method:'GET'},
+			add: {method:'PUT'},
+			update: {method:'POST'},
+			remove: {method:'DELETE'}
+		});
 
+		// Load/Validate model ================================================
 
-		var todoList = this;
-		todoList.todos = [
-			{id: 01, text:'implement fancy design', done:true, category: "frontend", date:1288323623006},
-			{id: 12, text:'add categories', done:false, category: "frontend"},
-			{id: 34, text:'check if simple todo titles are ok\nor if they have to be saved in their own field', done:false, date:new Date("1995-12-17T03:24:00")},
-			{id: 56, text:'build REST API', done:false, category: "backend"},
-			{id: 78, text:'sync with REST API', done:false, category: "backend"},
-		];
-		todoList.categories = []; // list of all real categories
-		todoList.filterCategories = []; // list of all categories used for filtering, including FILTER_ANY and FILTER_NONE
-		todoList.selectedCategory = null;
-
+		// Reload all Category and ToDo DAOs from the server and revalidate
 		function reload() {
 			Category.query(function(data){
 				todoList.categories = [];
@@ -201,20 +202,29 @@
 					todoList.selectedCategory = FILTER_ANY;
 				}
 			});
-			// ToDo.query(function(data){
-			// 	for (var i = 0; i < data.length; i++) {
-			// 		todoList.todos.push(data[i]);
-			// 	}
-			// });	
+			ToDo.query(function(data){
+				todoList.todos = [];
+				for (var i = 0; i < data.length; i++) {
+					data[i].date = new Date(data[i].date);
+					data[i].text = (data[i].title+"\n"+data[i].description);
+					data[i].done = data[i].done ? true : false; //explicit cast required for angular
+					todoList.todos.push(data[i]);
+				}
+				todoList.validateAll();
+			});	
 		}
 
+		// Validate the given todo and update its representation on the server
+		// This could probably also be solved via $watch, but explicit invokation works for now, too
 		todoList.validate = function(item) {
-			//assume that title and description are united as text and seperate them
 			if(!item.text && !item.lastText) {
+				//if no text is set for the todo and it has no previous text (i.e. it was newly created), delete it
 				todoList.remove(item);
 			} else if(!item.text) {
+				//if no new text was entered, revet
 				item.text = item.lastText;
 			} else {
+				// else assume that title and description are united as text and seperate them
 				var text = item.text.trim();
 				item.lastText = text;
 				var index = text.indexOf('\n');
@@ -225,14 +235,13 @@
 					item.title = text;
 					item.description = "";
 				}
-				console.log(item);
-				if (item.category && todoList.categories.indexOf(item.category) === -1) {
-					todoList.categories.push(item.category);
-					todoList.filterCategories.push(item.category);
-				}
+
+				// and update the db
+				ToDo.update({id:item.id}, item);
 			}
 		};
 
+		// Validate all ToDos and recalculate the categories used for filtering
 		todoList.validateAll = function() {
 			angular.forEach(todoList.todos, function(todo) {
 				todoList.validate(todo);
@@ -245,53 +254,59 @@
 
 		// ToDos ==============================================================
 
+		// Create an new todo with the current category
 		todoList.newTodo = function() {
-			var id = 0;
-			angular.forEach(todoList.todos, function(todo) {
-				id = Math.max(todo.id, id);
-			});
 			var category = todoList.selectedCategory;
 			if(!category || category == FILTER_ANY || category == FILTER_NONE) {
-				category = undefined;
+				category = undefined; //for filter "any" and "none" use the default category
 			}
 
-			todoList.todos.push({id: id, text: "", done: false, editable: true, category: category, date: Date.now()});
+			ToDo.add({title: "", text: "", done: false, category: category, date: new Date()}, function(res) {
+				res.editable = true;
+				res.text = res.text.trim();
+				todoList.todos.push(res);
+			});
 		};
 
+		// Remove a todo from the local model and the db
 		todoList.remove = function(item) { 
 			var index = todoList.todos.indexOf(item);
 			todoList.todos.splice(index, 1);
+			ToDo.remove({id: item.id}, null);
 		};
 
+		// Archive all todos marked as done in the current view, see todoList.remove
+		todoList.archive = function() {
+			for(var i = todoList.todos.length-1; i >= 0; i--) {
+				var todo = todoList.todos[i];
+				if (todo.done && todoList.isVisible(todo)) todoList.remove(todo);
+			}
+		};
+
+		// Number of undone todos in the current view
 		todoList.remaining = function() {
 			var count = 0;
 			angular.forEach(todoList.todos, function(todo) {
-				if(!todo.done && todoList.isSelected(todo)) count++;
+				if(!todo.done && todoList.isVisible(todo)) count++;
 			});
 			return count;
 		};
 
+		// Number of todos in the current view
 		todoList.count = function() {
 			var count = 0;
 			angular.forEach(todoList.todos, function(todo) {
-				if(todoList.isSelected(todo)) count++;
+				if(todoList.isVisible(todo)) count++;
 			});
 			return count;
-		};
-
-		todoList.archive = function() {
-			var oldTodos = todoList.todos;
-			todoList.todos = [];
-			angular.forEach(oldTodos, function(todo) {
-				if (!todo.done || !todoList.isSelected(todo)) todoList.todos.push(todo);
-			});
 		};
 
 		// Categories =========================================================
 
+		// Show a prompt for creating a new category
 		todoList.addCategory = function() {
 			var name = prompt("Please enter a name for the new category");
-			if(name) {
+			if(name && todoList.filterCategories.indexOf(name) === -1) {
 				// Add the new category to the listings
 				todoList.categories.push(name);
 				todoList.filterCategories.push(name);
@@ -300,6 +315,7 @@
 			}
 		}
 
+		// Remove the given cateory from all internal lists
 		function _removeCategory(cat) {
 			var index = todoList.categories.indexOf(cat);
 			todoList.categories.splice(index, 1);
@@ -307,6 +323,7 @@
 			todoList.filterCategories.splice(index, 1);
 		}
 
+		// Remove the given category from the local model and delete it on the server, also deleting all todos assigned to that category
 		todoList.removeCategory = function() {
 			if(todoList.isSpecialCategory()) {
 				return;
@@ -314,7 +331,7 @@
 			var name = todoList.selectedCategory;
 			//Remove the category from internal listings
 			_removeCategory(name);
-			//Remove every todo with teh given category
+			//Remove every todo with the given category
 			{
 				var oldTodos = todoList.todos;
 				todoList.todos = [];
@@ -328,6 +345,7 @@
 			Category.remove({id:name}, null);
 		}
 
+		// Rename a category in the local model an on the server
 		todoList.renameCategory = function() {
 			if(todoList.isSpecialCategory()) {
 				return;
@@ -349,13 +367,14 @@
 				//Update the selected category
 				todoList.selectedCategory = name;
 				//Perform these operations on the server
-				Category.rename({id:oldname}, name);
+				Category.rename({id:oldname}, {name:name});
 			}
 		}
 
 		// Category Filter ====================================================
 
-		todoList.isSelected = function(item) {
+		// Return true if the given todo should be currently visible (due to category filtering)
+		todoList.isVisible = function(item) {
 			if(!todoList.selectedCategory || todoList.selectedCategory == FILTER_ANY) {
 				return true;
 			} else if (todoList.selectedCategory == FILTER_NONE) {
@@ -365,6 +384,7 @@
 			}
 		};
 
+		// Retun true if the currently displayed category is a virtual category
 		todoList.isSpecialCategory = function() {
 			return todoList.selectedCategory == FILTER_ANY || todoList.selectedCategory == FILTER_NONE || !todoList.selectedCategory;
 		}
@@ -428,8 +448,8 @@
 				size="30"></ng-md-icon> 
 		</div>
 		<div id="list-content">
-			<div ng-repeat="todo in todoList.todos | filter: todoList.isSelected" ng-class="{'entry-done': todo.done}" class="entry" ng-attr-id="{{'entry-' + todo.id}}">
-				<div class="entry-checkbox"><input type="checkbox" ng-model="todo.done"/></div>
+			<div ng-repeat="todo in todoList.todos | filter: todoList.isVisible" ng-class="{'entry-done': todo.done}" class="entry" ng-attr-id="{{'entry-' + todo.id}}">
+				<div class="entry-checkbox"><input type="checkbox" ng-model="todo.done" ng-click="todoList.validate(todo);"/></div>
 				<div class="entry-text">
 					<!--todo.title could also have its own input, but simply putting it as the first line of the description has a better usability
 					<input class="entry-title" type="text" ng-model="todo.title" />-->
