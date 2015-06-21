@@ -19,6 +19,9 @@
 		content {
 			width: 100%;
 		}
+		#errors {
+			width: 100%;	
+		}
 	}
 
 	@media (min-width: 800px) {
@@ -37,6 +40,11 @@
 		#list-footer {
 			border-bottom-left-radius: 20px;
 			border-bottom-right-radius: 20px;
+		}
+		#errors {
+			margin: 5px auto;
+			width: 600px;
+			border-radius: 10px;
 		}
 	}
 
@@ -144,6 +152,25 @@
 		height: 22px;
 		margin: 4px 5px;
 	}
+	#errors {
+		border: 1px solid red;
+		background-color: #FCC;
+		padding: 4px;
+		display: table;
+	}
+	#errors .error {
+		display: table-row;
+	}
+	#errors .error-text {
+		display: table-cell;
+		padding: 4px;
+	}
+	#errors .error-ignore {
+		width: 16px;
+		padding: 4px;
+		display: table-cell;
+		vertical-align: middle;
+	}
 	ng-md-icon {
 		cursor: pointer;
 	}
@@ -170,6 +197,8 @@
 		var FILTER_ANY = "any"; // display all todos
 		var FILTER_NONE = "none"; // display todos with category <null>
 		todoList.selectedCategory = null; // currently displayed category, or FILTER_ANY or FILTER_NONE
+
+		todoList.errors = [];
 
 		// DAOs for reading/writing server model ==============================
 
@@ -201,7 +230,7 @@
 				if (todoList.filterCategories.indexOf(todoList.selectedCategory) === -1) {
 					todoList.selectedCategory = FILTER_ANY;
 				}
-			});
+			}, todoList.logError);
 			ToDo.query(function(data){
 				todoList.todos = [];
 				for (var i = 0; i < data.length; i++) {
@@ -211,7 +240,7 @@
 					todoList.todos.push(data[i]);
 				}
 				todoList.validateAll();
-			});	
+			}, todoList.logError);	
 		}
 
 		// Validate the given todo and update its representation on the server
@@ -237,7 +266,10 @@
 				}
 
 				// and update the db
-				ToDo.update({id:item.id}, item);
+				ToDo.update({id:item.id}, item, null, function(error) {
+					item.text = item.lastText;
+					todoList.logError(error);
+				});
 			}
 		};
 
@@ -265,14 +297,15 @@
 				res.editable = true;
 				res.text = res.text.trim();
 				todoList.todos.push(res);
-			});
+			}, todoList.logError);
 		};
 
 		// Remove a todo from the local model and the db
 		todoList.remove = function(item) { 
-			var index = todoList.todos.indexOf(item);
-			todoList.todos.splice(index, 1);
-			ToDo.remove({id: item.id}, null);
+			ToDo.remove({id: item.id}, null, function() {
+				var index = todoList.todos.indexOf(item);
+				todoList.todos.splice(index, 1);
+			}, todoList.logError);
 		};
 
 		// Archive all todos marked as done in the current view, see todoList.remove
@@ -389,6 +422,28 @@
 			return todoList.selectedCategory == FILTER_ANY || todoList.selectedCategory == FILTER_NONE || !todoList.selectedCategory;
 		}
 
+		// Errors =============================================================
+
+		todoList.ignoreError = function(error) {
+			var index = todoList.errors.indexOf(error);
+			todoList.errors.splice(index, 1);
+		}
+
+		todoList.logError = function(error) {
+			console.error(error);
+			todoList.errors.push({message: extractMessage(error), error:error});
+		}
+
+		function extractMessage(object) {
+			if (object.message) {
+				return object.message;		
+			} else if (object.status && object.statusText) {
+				return object.status + " " + object.statusText + ": " + extractMessage(object.data);		
+			} else {
+				return JSON.stringify(object);
+			}
+		}
+
 		reload();
 	})
 	.directive('focusOn', function($timeout) {
@@ -412,10 +467,10 @@
 	});
 	</script>
 </head>
-<body ng-app="todoApp">
+<body ng-app="todoApp"  ng-controller="TodoListController as todoList">
 	<h1 id="header">Restful ToDo</h1>
 	<div id="subtitle">Built with Node.js and Angular.js</div>
-	<content ng-controller="TodoListController as todoList">
+	<content>
 		<div id="list-header">
 			<select id="category-select" ng-model="todoList.selectedCategory" ng-options="cat for cat in todoList.filterCategories"></select>
 			
@@ -481,5 +536,16 @@
 		<div ng-hide="todoList.todos.length" id="list-empty">No ToDos yet!<br/><a href ng-click="todoList.newTodo()">Add one!</a></div>
 		<div id="list-footer">{{todoList.remaining()}} of {{todoList.count()}} remaining</div>
 	</content>
+	<div id="errors" ng-hide="!todoList.errors.length">
+		<div ng-repeat="error in todoList.errors" class="error">
+			<span class="error-text" ng-bind-html="error.message">Test</span>
+			<ng-md-icon 
+				class="error-ignore"
+				title="Ignore Error"
+				ng-click="todoList.ignoreError(error)"
+				icon="clear"
+				size="16"></ng-md-icon> 
+		</div>
+	</div>
 </body>
 </html>
