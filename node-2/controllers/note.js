@@ -16,15 +16,16 @@ module.exports.delete = function deleteNote(req, res) {
 		res.sendStatus(500, "Database error");
 	} else {
 		var id = req.params.id;
-		var sql = "DELETE FROM todo WHERE id="+id;
-		con.query(sql, function(err, rows) {
+		var query = module.exports.squel.delete()
+						.from("todo")
+						.where("id=?", id);
+		con.query(query.toString(), function(err, rows) {
 			con.release();
 			if (err) {
 				console.error(err);
 				res.sendStatus(404);
 			} else {
-				res.sendStatus(200);
-				res.status.json(rows);
+				res.status(200).json(rows);
 			}
 		});
 	}
@@ -54,14 +55,18 @@ module.exports.create = function createNote(req, res) {
 		var category_id = req.body.category_id;
 
 		// check if there was given a category id, else add uncategorized note
-		if (category_id || category_id == "") {
+		if (!category_id) {
 			category_id = "NULL";
 		}
 
-		var sql = "INSERT INTO todo (id, description, title, created, done, category_id) " 
-					+ 'VALUES (NULL,"' + description + '","' + title + '","' + created +  '",' + done + ',' + category_id + ');';
-		console.log(sql);
-		con.query(sql, function(err, rows) {
+		var sql = module.exports.squel.insert()
+						.into("todo")
+						.set("description", description)
+						.set("title", title)
+						.set("created", created)
+						.set("done", done)
+						.set("category_id", category_id);
+		con.query(sql.toString(), function(err, rows) {
 			con.release();
 			if (err) {
 				console.error(err);
@@ -88,9 +93,19 @@ module.exports.selectAll = function selectAllNotes(req, res) {
 			con.release();
 		}
 		console.error(err);
-		res.sendStatus(500, "Database error");
+		res.status(500).send("Database error");
 	} else {
-		con.query("SELECT t.id, t.title, t.description, t.created, t.done, c.id as category_id, c.name as category_name FROM todo t JOIN category c ON t.category_id = c.id", function(err, rows) {
+		var query = module.exports.squel.select()
+										.from("todo", "t")
+										.left_join("category", "c", "t.category_id = c.id")
+										.field("t.id")
+										.field("t.title")
+										.field("t.description")
+										.field("t.created")
+										.field("t.done")
+										.field("c.id", "category_id")
+										.field("c.name", "category_name");
+		con.query(query.toString(), function(err, rows) {
 			con.release();
 			if (err) {
 				console.error(err);
@@ -126,13 +141,15 @@ module.exports.update = function updateNote(req, res) {
 		var done = req.body.done;
 		var category_id = req.body.category_id;
 
-		var sql = 'UPDATE todo SET title="' + title + '", ' +
-										'description="'+ description + '", ' +
-										'created="' + created +'", ' +
-										'done=' + done + ', ' +
-										'category_id=' + category_id + ' WHERE id=' + id;
-		console.log(sql);
-		con.query(sql, function(err, rows) {
+		var query = module.exports.squel.update()
+										.table("todo")
+										.set("title", title)
+										.set("description", description)
+										.set("created", created)
+										.set("done", done)
+										.set("category_id", category_id)
+										.where("id=?", id);		
+		con.query(query.toString(), function(err, rows) {
 			con.release();
 			if (err) {
 				console.error(err);
