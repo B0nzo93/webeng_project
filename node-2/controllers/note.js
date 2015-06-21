@@ -96,8 +96,8 @@ module.exports.create = function createNote(req, res) {
 		var category_id = req.body.category_id;
 
 		// check if there was given a category id, else add uncategorized note
-		if (!category_id) {
-			category_id = "NULL";
+		if (category_id == "") {
+			category_id = null;
 		}
 
 		var sql = module.exports.squel.insert()
