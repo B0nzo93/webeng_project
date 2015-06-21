@@ -13,7 +13,7 @@ module.exports = function(app, mysql, squel) {
 	app.get('/categories', function (req, res) {
 		category.selectAll(req, res);
 	});
-	app.post('/categories/:name', function (req, res) {
+	app.post('/categories/:id', function (req, res) {
 		category.update(req, res);
 	});
 	app.delete('/categories/:id', function (req, res) {

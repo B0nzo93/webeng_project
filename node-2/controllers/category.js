@@ -105,12 +105,12 @@ module.exports.create = function createCategory(req, res) {
 module.exports.update = function updateCategory(req, res) {
 
 	connectAndQuery(req, res, function(req, res, con){
-		var name = req.params.name;
+		var id = req.params.id;
 		var new_name = req.body.new_name;
 		var query = module.exports.squel.update()
 										.table("category")
 										.set("name", new_name)
-										.where("name=?", name);
+										.where("id=?", id);
 		con.query(query.toString(), responseHandler(res, con));
 	});
 };
