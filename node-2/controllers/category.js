@@ -5,7 +5,7 @@ function errorhandler(res, con) {
 		con.release();
 		if (err) {
 			console.error(err);
-			res.status(400).send("Error on SQL execution.");
+			res.status(400).send("Error on query execution.");
 		} else {
 			res.status(200).json(rows);
 		}
