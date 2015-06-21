@@ -201,35 +201,55 @@ module.exports = function(app, db){
 		var isDone = req.body.done ? 1 : 0;
 		var category_name = req.body.category;
 
-		// First, check if the category with the given name exists
-		db.query("SELECT name FROM category WHERE name = ?", category_name,
-			errorhandler(res),
-			function(rows) {
-				if(rows.length == 0) {
-					// If the given category does not exists, respont with a 404 page
-					var json = {success: false, message: "Category " + category_name + " not found."};
-					console.log("Response: 404: " + JSON.stringify(json));
-					res.status(404).json(json);
-				} else {
-					// Then, to whatever
-					db.query("INSERT INTO todo (description, title, created, done, category_id) VALUES(?, ?, ?, ?, (SELECT category.id FROM category WHERE category.name = ? LIMIT 1))", [description, title, created, isDone, category_name],
-						errorhandler(res),
-						function(rows) {
-							// after inserting a new note, get its id and then retrieve the values to show the complete note, as with a GET request
-							var insertId = rows.insertId;
-							if(insertId == 0) {
-								// If insertId == 0, no then the INSERT failed (reason could be, that no category with the given category name exists.)
-								var json = {success: false, message: "Error: No note has been inserted."};
-								console.log("Response: " + JSON.stringify(json));
-								res.status(500).json(json);
-							} else {
-								sendNoteData(res, insertId);
+		if(category_name) {
+			// First, check if the category with the given name exists
+			db.query("SELECT name FROM category WHERE name = ?", category_name,
+				errorhandler(res),
+				function(rows) {
+					if(rows.length == 0) {
+						// If the given category does not exists, respond with a 400 page
+						var json = {success: false, message: "Category " + category_name + " not found."};
+						console.log("Response: 400: " + JSON.stringify(json));
+						res.status(400).json(json);
+					} else {
+						// Then, do the INSERT
+						db.query("INSERT INTO todo (description, title, created, done, category_id) VALUES(?, ?, ?, ?, (SELECT category.id FROM category WHERE category.name = ? LIMIT 1))", [description, title, created, isDone, category_name],
+							errorhandler(res),
+							function(rows) {
+								// after inserting a new note, get its id and then retrieve the values to show the complete note, as with a GET request
+								var insertId = rows.insertId;
+								if(insertId == 0) {
+									// If insertId == 0, no then the INSERT failed (reason could be, that no category with the given category name exists.)
+									var json = {success: false, message: "Error: No note has been inserted."};
+									console.log("Response: " + JSON.stringify(json));
+									res.status(500).json(json);
+								} else {
+									sendNoteData(res, insertId);
+								}
 							}
-						}
-					);
+						);
+					}
 				}
-			}
-		);
+			);
+		} else {
+			// Then, do the INSERT
+			db.query("INSERT INTO todo (description, title, created, done, category_id) VALUES(?, ?, ?, ?, NULL)", [description, title, created, isDone, category_name],
+				errorhandler(res),
+				function(rows) {
+					// after inserting a new note, get its id and then retrieve the values to show the complete note, as with a GET request
+					var insertId = rows.insertId;
+					if(insertId == 0) {
+						// If insertId == 0, no then the INSERT failed (reason could be, that no category with the given category name exists.)
+						var json = {success: false, message: "Error: No note has been inserted."};
+						console.log("Response: " + JSON.stringify(json));
+						res.status(500).json(json);
+					} else {
+						sendNoteData(res, insertId);
+					}
+				}
+			);
+		}
+
 	});
 
 	app.delete('/notes/:id', function (req, res) {
