@@ -1,5 +1,17 @@
 module.exports = {};
 
+function errorhandler(res, con) {
+	return function(err, rows) {
+		con.release();
+		if (err) {
+			console.error(err);
+			res.status(400).send("Error on query execution.");
+		} else {
+			res.status(200).json(rows);
+		}
+	}
+}
+
 /**
 * This function deletes a note in the databse extractec from a request.
 *
@@ -19,13 +31,42 @@ module.exports.delete = function deleteNote(req, res) {
 		var query = module.exports.squel.delete()
 						.from("todo")
 						.where("id=?", id);
+		con.query(query.toString(), errorhandler(res, con));
+	}
+	});
+};
+
+
+/**
+* This function gets a certain note in the databse extracted from a request.
+*
+* @param {req} request
+* @param {res} response 
+*/
+module.exports.select = function selectNote(req, res) {
+	module.exports.mysql.getConnection(function(err, con) {
+	if (err) {
+		if(con) {
+			con.release();
+		}
+		console.error(err);
+		res.sendStatus(500, "Database error");
+	} else {
+		var id = req.params.id;
+		var query = module.exports.squel.select()
+						.from("todo")
+						.where("id=?", id);
 		con.query(query.toString(), function(err, rows) {
 			con.release();
 			if (err) {
 				console.error(err);
-				res.sendStatus(404);
+				res.status(400).send("Error on query execution.");
 			} else {
-				res.status(200).json(rows);
+				if (rows.length == 1) {
+					res.status(200).json(rows[0]);
+				} else {
+					res.status(400).send("Invalid id");
+				}
 			}
 		});
 	}
@@ -48,8 +89,8 @@ module.exports.create = function createNote(req, res) {
 		console.error(err);
 		res.sendStatus(500, "Database error");
 	} else {
-		var title = req.body.title;
-		var description = req.body.description;
+		var title = req.body.title || "";
+		var description = req.body.description || "";
 		var created = req.body.created;
 		var done = req.body.done;
 		var category_id = req.body.category_id;
@@ -66,22 +107,15 @@ module.exports.create = function createNote(req, res) {
 						.set("created", created)
 						.set("done", done)
 						.set("category_id", category_id);
-		con.query(sql.toString(), function(err, rows) {
-			con.release();
-			if (err) {
-				console.error(err);
-				res.sendStatus(400, "Check the type and structure of your request");
-			} else {
-				res.status(200).json(rows);
-			}
-		});
+		con.query(sql.toString(), errorhandler(res, con));
 	}
 	});
 };
 
 
 /**
-* This function selects all notes in the databse extracted from a request.
+* This function selects all notes and their corresponding category ids and names
+* in the databse extracted from a request.
 *
 * @param {req} request
 * @param {res} response 
@@ -105,15 +139,7 @@ module.exports.selectAll = function selectAllNotes(req, res) {
 										.field("t.done")
 										.field("c.id", "category_id")
 										.field("c.name", "category_name");
-		con.query(query.toString(), function(err, rows) {
-			con.release();
-			if (err) {
-				console.error(err);
-				res.sendStatus(404);
-			} else {
-				res.status(200).json(rows);
-			}
-		});
+		con.query(query.toString(), errorhandler(res, con));
 	}
 	});
 };
@@ -135,8 +161,8 @@ module.exports.update = function updateNote(req, res) {
 		res.sendStatus(500, "Database error");
 	} else {
 		var id = req.params.id;
-		var title = req.body.title;
-		var description = req.body.description;
+		var title = req.body.title || "";
+		var description = req.body.description || "";
 		var created = req.body.created;
 		var done = req.body.done;
 		var category_id = req.body.category_id;
@@ -149,15 +175,7 @@ module.exports.update = function updateNote(req, res) {
 										.set("done", done)
 										.set("category_id", category_id)
 										.where("id=?", id);		
-		con.query(query.toString(), function(err, rows) {
-			con.release();
-			if (err) {
-				console.error(err);
-				res.sendStatus(404);
-			} else {
-				res.status(200).json(rows);
-			}
-		});
+		con.query(query.toString(), errorhandler(res, con));
 	}
 	});
 };
