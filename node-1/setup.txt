@@ -1,0 +1,49 @@
+Anleitung für das Setup:
+
+1) Alle Dateien in ein geeignetes Verzeichnis kopieren. Folgende Dateien werden benötigt:
+
+	./app.js
+	./mysql.conf.js
+	./mysql.js
+	./routes.js
+	./webeng.sql
+	./static/elastic.js
+	./static/index.html
+
+
+2) Installation von node, Node Package Manager (npm) sowie benötigten Libraries
+
+	Beispiel für Ubuntu:
+
+	sudo apt-get install node npm
+	npm install express
+	npm install body-parser
+
+
+3) Aufsetzen der Datenbank
+
+	Die Datenbank muss nach dem gegebenen ER-Diagramm angelegt werden. Dazu können die Anweisungen in der Datei ./webeng.sql benutzt werden.
+
+
+4) Konfiguration: Die Datei ./mysql.conf.js muss folgendermaßen angepasst werden:
+
+    host     : '<Host des Datenbankservers, z.B. 127.0.0.1>',
+    port     : '<Port des Datenbankservers, z.B. 3006>',
+    user     : '<DB-User, z.B. user123>',
+    password : '<Passwort des DB-Users, z.B. geheimesPW1337>',
+    database : '<Name der Datenbank, z.B. user123_todonotes>',
+
+	Alle anderen Felder sollen unverändert bleiben.
+
+
+5) Starten des Servers
+
+	Der Server wird folgendermaßen gestartet:
+
+	cd path/to/project/
+	node app.js
+
+
+6) Aufrufen im Browser
+
+	Aufruf von <hostname>:3000, z.b. localhost:3000 bei einer lokalen Installation.
