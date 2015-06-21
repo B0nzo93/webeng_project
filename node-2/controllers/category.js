@@ -1,6 +1,6 @@
 module.exports = {};
 
-function errorhandler(res, con) {
+function responseHandler(res, con) {
 	return function(err, rows) {
 		con.release();
 		if (err) {
@@ -36,7 +36,7 @@ module.exports.selectAll = function selectAllCategories(req, res) {
 	connectAndQuery(req, res, function(req, res, con) {
 		var query = module.exports.squel.select()
 										.from("category");
-		con.query(query.toString(), errorhandler(res, con));
+		con.query(query.toString(), responseHandler(res, con));
 	});
 };
 
@@ -53,7 +53,7 @@ module.exports.delete = function deleteCategory(req, res) {
 		var query = module.exports.squel.delete()
 										.from("category")
 										.where("id=?", id);
-		con.query(query.toString(), errorhandler(res, con));
+		con.query(query.toString(), responseHandler(res, con));
 	});
 };
 
@@ -71,7 +71,7 @@ module.exports.create = function createCategory(req, res) {
 										.into("category")
 									  	.set("id", null)
 									  	.set("name", name);
-		con.query(query.toString(), errorhandler(res, con));
+		con.query(query.toString(), responseHandler(res, con));
 	});
 };
 
@@ -90,6 +90,6 @@ module.exports.update = function updateCategory(req, res) {
 										.table("category")
 										.set("name", new_name)
 										.where("name=?", name);
-		con.query(query.toString(), errorhandler(res, con));
+		con.query(query.toString(), responseHandler(res, con));
 	});
 };
