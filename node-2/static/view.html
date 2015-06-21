@@ -81,6 +81,7 @@
 							'<h3 class="panel-title"><b>' + todos[i].title +  '</b> (created ' + todos[i].created + ')</h3>' +
 							'<div class="text-right">' +
 							'<div class="btn-group">' +
+								'<button type="button" class="btn btn-success" data-toggle="button" aria-pressed="false" autocomplete="off"> DONE </button>' +
 								'<button type="button" class="btn btn-primary" onClick=\'buildDialogEdit(' + JSON.stringify(todos[i]) + ')\' >Edit</button>' +
 								'<button type="button" class="btn btn-danger" onClick="deleteNote(' +  todos[i].id + ')" >Delete</button>' +
 							'</div>' +
@@ -117,7 +118,7 @@
 			$("#title").val(note.title);
 			$("#description").val(note.description);
 			$("#date").val(jsDate2HTML(new Date(note.created)));
-			$("#category_id").val(category_id);
+			$("#category_id").val(note.category_id);
 			$("#btn-submit").html("Edit Note");
 			$("#btn-submit").unbind("click");
 			$("#btn-submit").bind("click", editNote);
@@ -166,6 +167,7 @@
 			var description = $('#description').val();
 			var created = new Date($('#date').val()).toISOString();
 			var category_id = $("#category_id").val();
+			console.log(category_id);
 			var data = {"id": id, "title":title, "description":description, "created":created, "done":0, "category_id":category_id};
 			$.ajax({
 				data: JSON.stringify(data),
@@ -175,6 +177,19 @@
 				success: function () {
 					refreshData();
 					$("#modal-new-note").modal('hide');
+				}
+			});
+		}
+
+		function done(note) {
+			var data = {"id": id, "title":title, "description":description, "created":created, "done":0, "category_id":category_id};
+			$.ajax({
+				data: JSON.stringify(data),
+				processData: false,
+				url: '/notes/' + id,
+				method: 'POST',
+				success: function () {
+					refreshData();
 				}
 			});
 		}
@@ -194,6 +209,7 @@
     			success: refreshData
 	    	});
 		}
+
 
 		$(function() {
 			refreshData();
@@ -234,7 +250,7 @@
 					Date
 					<input id = "date" type = "date" >
 					<input type = "hidden" id = "note_id" />
-					<input type ="hidden" id ="category_id" />
+					<input type = "hidden" id ="category_id" />
 				</div>
 				<div class="modal-footer">
 					<button type="button" class ="btn btn-default" data-dismiss="modal">Dismiss</button>
