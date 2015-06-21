@@ -3,7 +3,7 @@ var bodyParser = require('body-parser');
 
 function writeDBError(res, err) {
 	console.error(err);
-	res.status(500).json({code: 100, message: "Could not fetch data from db", error: err});
+	res.status(500).json({success: false, message: "Could not fetch data from db", error: err});
 }
 
 function errorhandler(res) {
@@ -28,24 +28,24 @@ function isEmpty(obj) {
 	return true;
 }
 
-function sendNoteData(res, noteId) {
-	db.query("SELECT * FROM todo_category WHERE id = ?", noteId, 
-		errorhandler(res),
-		function(rows) {
-			if(rows.length == 0) {
-				//if the note with the given id does not exist, respond with a 404 page
-				var json = {success: false, message: "Note with id = " + req.params.id + " not found."};
-				console.log("Response: 404: " + JSON.stringify(json));
-				res.status(404).json(json);
-			} else {
-				console.log("Response: " + JSON.stringify(rows[0]));
-				res.status(200).json(rows[0]);
-			}
-		}
-	);
-}
-
 module.exports = function(app, db){
+	function sendNoteData(res, noteId) {
+		db.query("SELECT * FROM todo_category WHERE id = ?", noteId, 
+			errorhandler(res),
+			function(rows) {
+				if(rows.length == 0) {
+					//if the note with the given id does not exist, respond with a 404 page
+					var json = {success: false, message: "Note with id = " + req.params.id + " not found."};
+					console.log("Response: 404: " + JSON.stringify(json));
+					res.status(404).json(json);
+				} else {
+					console.log("Response: " + JSON.stringify(rows[0]));
+					res.status(200).json(rows[0]);
+				}
+			}
+		);
+	}
+
 	app.use(bodyParser.json( {type: "*/*"} ));
 	app.use(express.static('static'));
 
