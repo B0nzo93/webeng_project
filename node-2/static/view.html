@@ -105,12 +105,10 @@
 		}
 
 		function jsDate2HTML(date) {
-			var minutes = date.getMinutes();
-			var hour = (date.getHours()+1);
 			var day = ("0" + date.getDate()).slice(-2);
 			var month = ("0" + (date.getMonth() + 1)).slice(-2);
 			var year = date.getFullYear();
-			return (day)+"-"+(month)+"-"+(year);
+			return date.getFullYear()+"-"+(month)+"-"+(day);
 		}
 
 		function buildDialogAdd(category_id) {
