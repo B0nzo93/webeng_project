@@ -1,8 +1,10 @@
-module.exports = function(app, mysql) {
+module.exports = function(app, mysql, squel) {
 	var category = require('./controllers/category');
 	var note = require('./controllers/note');
 	category.mysql = mysql;
 	note.mysql = mysql;
+	category.squel = squel;
+	note.squel = squel;
 
 	app.delete('/categories/:id', function (req, res) {
 		category.delete(req, res);
