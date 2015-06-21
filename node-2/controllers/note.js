@@ -1,5 +1,13 @@
 module.exports = {};
 
+
+/**
+* This function handels the response to a clients request. If the 
+* request was successful the result is sent otherwise an error code.
+* 
+* @param {res} response
+* @param {con} database connection
+*/
 function responseHandler(res, con) {
 	return function(err, rows) {
 		con.release();
@@ -12,6 +20,15 @@ function responseHandler(res, con) {
 	}
 }
 
+
+/**
+* This function requests a connection of the database pool and 
+* executes a query on that connection.
+*
+* @param {req} requser
+* @param {res} response
+* @param {callback} callback which is called on success
+*/
 function connectAndQuery(req, res, callback) {
 	module.exports.mysql.getConnection(function(err, con) {
 		if (err) {
@@ -25,6 +42,7 @@ function connectAndQuery(req, res, callback) {
 		}
 	});
 }
+
 
 /**
 * This function deletes a note in the databse extractec from a request.

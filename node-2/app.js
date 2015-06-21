@@ -2,6 +2,7 @@
 var mysql = require("mysql");
 var pool  = mysql.createPool(require("./mysql.js"));
 
+// Test databse pool
 pool.on('error', function(err) {
 	console.error(err);
 });
@@ -15,7 +16,7 @@ app.use(bodyParser.json({type: "*/*"}));
 app.use(express.static("static"));
 require('./routes')(app, pool, squel);
 
-// Start
+// Start the server
 var server = app.listen(3000, function () {
 	var host = server.address().address;
 	var port = server.address().port;

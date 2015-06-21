@@ -1,5 +1,13 @@
 module.exports = {};
 
+
+/**
+* This function handels the response to a clients request. If the 
+* request was successful the result is sent otherwise an error code.
+* 
+* @param {res} response
+* @param {con} database connection
+*/
 function responseHandler(res, con) {
 	return function(err, rows) {
 		con.release();
@@ -12,6 +20,15 @@ function responseHandler(res, con) {
 	}
 }
 
+
+/**
+* This function requests a connection of the database pool and 
+* executes a query on that connection.
+*
+* @param {req} requser
+* @param {res} response
+* @param {callback} callback which is called on success
+*/
 function connectAndQuery(req, res, callback) {
 	module.exports.mysql.getConnection(function(err, con) {
 		if (err) {
@@ -26,6 +43,7 @@ function connectAndQuery(req, res, callback) {
 	});
 }
 
+
 /**
 * This function selects all categories in the databse extracted from a request.
 *
@@ -39,6 +57,7 @@ module.exports.selectAll = function selectAllCategories(req, res) {
 		con.query(query.toString(), responseHandler(res, con));
 	});
 };
+
 
 /**
 * This function deletes a category in the database extracted from a request.
@@ -57,6 +76,7 @@ module.exports.delete = function deleteCategory(req, res) {
 	});
 };
 
+
 /**
 * This function creates a category in the database extracted from a request.
 *
@@ -74,6 +94,7 @@ module.exports.create = function createCategory(req, res) {
 		con.query(query.toString(), responseHandler(res, con));
 	});
 };
+
 
 /**
 * This function updates a category in the database extracted from a request.
