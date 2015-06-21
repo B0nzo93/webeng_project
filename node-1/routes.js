@@ -1,12 +1,11 @@
 var express = require("express");
 var bodyParser = require('body-parser');
 
-
-
 function writeDBError(res, err) {
 	console.error(err);
 	res.status(500).json({code: 100, message: "Could not fetch data from db", error: err});
 }
+
 function errorhandler(res) {
 	return function(err) {
 		writeDBError(res, err);
@@ -27,6 +26,23 @@ function isEmpty(obj) {
 		if (hasOwnProperty.call(obj, key)) return false;
 	}
 	return true;
+}
+
+function sendNoteData(res, noteId) {
+	db.query("SELECT * FROM todo_category WHERE id = ?", noteId, 
+		errorhandler(res),
+		function(rows) {
+			if(rows.length == 0) {
+				//if the note with the given id does not exist, respond with a 404 page
+				var json = {success: false, message: "Note with id = " + req.params.id + " not found."};
+				console.log("Response: 404: " + JSON.stringify(json));
+				res.status(404).json(json);
+			} else {
+				console.log("Response: " + JSON.stringify(rows[0]));
+				res.status(200).json(rows[0]);
+			}
+		}
+	);
 }
 
 module.exports = function(app, db){
@@ -79,27 +95,6 @@ module.exports = function(app, db){
 		);
 
 	});
-
-
-
-
-		// // First, check if the category with the given name exists
-		// db.query("SELECT name FROM category WHERE name = ?", req.params.name,
-		// 	errorhandler(res),
-		// 	function(rows) {
-		// 		if(rows.length == 0) {
-		// 			// If the given category does not exists, respont with a 404 page
-		// 			console.log("Response: 404: " + JSON.stringify({success: false, message: "Category " + req.params.name + " not found."}));
-		// 			res.status(404).json({success: false, message: "Category " + req.params.name + " not found."});
-		// 		} else {
-		// 			// Then, to whatever
-		// 		}
-		// 	});
-
-
-
-
-
 
 	app.put('/categories/:name', function (req, res) {
 		console.log("Request: PUT /categories/" + req.params.name);
@@ -195,20 +190,7 @@ module.exports = function(app, db){
 
 	app.get('/notes/:id', function (req, res) {
 		console.log("Request: GET /notes/" + req.params.id);
-		db.query("SELECT * FROM todo_category WHERE id = ?", req.params.id, 
-			errorhandler(res),
-			function(rows) {
-				if(rows.length == 0) {
-					//if the note with the given id does not exist, respond with a 404 page
-					var json = {success: false, message: "Note with id = " + req.params.id + " not found."};
-					console.log("Response: 404: " + JSON.stringify(json));
-					res.status(404).json(json);
-				} else {
-					console.log("Response: " + JSON.stringify(rows[0]));
-					res.status(200).json(rows[0]);
-				}
-			}
-		);
+		sendNoteData(res, req.params.id);
 	});
 
 	app.put('/notes', function (req, res) {
@@ -241,12 +223,7 @@ module.exports = function(app, db){
 								console.log("Response: " + JSON.stringify(json));
 								res.status(500).json(json);
 							} else {
-								db.query("SELECT * FROM todo_category WHERE id = ?", insertId, errorhandler(res),
-									function(rows) {
-										console.log("Response: " + JSON.stringify(rows[0]));
-										res.status(200).json(rows[0]);
-									}
-								);
+								sendNoteData(res, insertId);
 							}
 						}
 					);
@@ -284,37 +261,43 @@ module.exports = function(app, db){
 						var newTitle = req.body.title || "";
 						var newCreated = req.body.date; // or req.body.created ??
 						var newDone = req.body.done;
-						var newCategoryName = req.body.category;
+						var newCategoryName = req.body.category || "";
 						var noteId = req.params.id;
 
-						// check if the category with the given (possibly new) name exists
-						db.query("SELECT name FROM category WHERE name = ?", newCategoryName,
-							errorhandler(res),
-							function(rows) {
-								if(rows.length == 0) {
-									// If the given category does not exists, respont with a 404 page
-									var json = {success: false, message: "Category " + newCategoryName + " not found."}
-									console.log("Response: 404: " + JSON.stringify(json));
-									res.status(404).json(json);
-								} else {
-									// If the new category does exist, perform the UPDATE
-									// UPDATE todo SET category_id=(SELECT id FROM category WHERE name = 'test10') WHERE id = 3
-									db.query("UPDATE todo SET description=?, title=?, created=?, done=?, category_id=(SELECT id FROM category WHERE name = ?) WHERE id = ? LIMIT 1", [newDescription, newTitle, newCreated, newDone, newCategoryName, noteId],
-										errorhandler(res),
-										function(rows) {
-											// After the UPDATE, perform a SELECT to retrieve the new values and show the complete note, as with a GET request
-											db.query("SELECT * FROM todo_category WHERE id = ?", noteId, errorhandler(res),
-												function(rows) {
-													console.log("Response: " + JSON.stringify(rows[0]));
-													res.status(200).json(rows[0]);
-												}
-											);
-										}
-									);
+						if (newCategoryName) {
+							// check if the category with the given name exists
+							db.query("SELECT name FROM category WHERE name = ?", newCategoryName,
+								errorhandler(res),
+								function(rows) {
+									if(rows.length == 0) {
+										// If the given category does not exist, respond with a 400 page
+										var json = {success: false, message: "Category " + newCategoryName + " not found."}
+										console.log("Response: 400: " + JSON.stringify(json));
+										res.status(400).json(json);
+									} else {
+										// If the new category does exist, perform the UPDATE
+										// UPDATE todo SET category_id=(SELECT id FROM category WHERE name = 'test10') WHERE id = 3
+										db.query("UPDATE todo SET description=?, title=?, created=?, done=?, category_id=(SELECT id FROM category WHERE name = ?) WHERE id = ? LIMIT 1", [newDescription, newTitle, newCreated, newDone, newCategoryName, noteId],
+											errorhandler(res),
+											function(rows) {
+												// After the UPDATE, perform a SELECT to retrieve the new values and show the complete note, as with a GET request
+												sendNoteData(res, noteId);
+											}
+										);
 
+									}
 								}
-							}
-						);
+							);	
+						} else {
+							// If no category is set, perform the update with category = NULL
+							db.query("UPDATE todo SET description=?, title=?, created=?, done=?, category_id=NULL WHERE id = ? LIMIT 1", [newDescription, newTitle, newCreated, newDone, newCategoryName, noteId],
+								errorhandler(res),
+								function(rows) {
+									// After the UPDATE, perform a SELECT to retrieve the new values and show the complete note, as with a GET request
+									sendNoteData(res, noteId);
+								}
+							);
+						}
 					}
 				}
 			);
@@ -324,9 +307,5 @@ module.exports = function(app, db){
 			console.log("Response: 400: " + JSON.stringify(json));
 			res.status(400).json(json);
 		}
-	});	
-
-	
-
-
+	});
 }
