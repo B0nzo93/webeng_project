@@ -1,6 +1,6 @@
 module.exports = {};
 
-function errorhandler(res, con) {
+function responseHandler(res, con) {
 	return function(err, rows) {
 		con.release();
 		if (err) {
@@ -12,6 +12,20 @@ function errorhandler(res, con) {
 	}
 }
 
+function connectAndQuery(req, res, callback) {
+	module.exports.mysql.getConnection(function(err, con) {
+		if (err) {
+			if(con) {
+				con.release();
+			}
+			console.error(err);
+			res.status(500).send("Database error.");
+		} else {
+			callback(req, res, con);
+		}
+	});
+}
+
 /**
 * This function deletes a note in the databse extractec from a request.
 *
@@ -19,20 +33,12 @@ function errorhandler(res, con) {
 * @param {res} response 
 */
 module.exports.delete = function deleteNote(req, res) {
-	module.exports.mysql.getConnection(function(err, con) {
-	if (err) {
-		if(con) {
-			con.release();
-		}
-		console.error(err);
-		res.sendStatus(500, "Database error");
-	} else {
+	connectAndQuery(req, res, function(req, res, con) {
 		var id = req.params.id;
 		var query = module.exports.squel.delete()
 						.from("todo")
 						.where("id=?", id);
-		con.query(query.toString(), errorhandler(res, con));
-	}
+		con.query(query.toString(), responseHandler(res, con));
 	});
 };
 
@@ -44,32 +50,22 @@ module.exports.delete = function deleteNote(req, res) {
 * @param {res} response 
 */
 module.exports.select = function selectNote(req, res) {
-	module.exports.mysql.getConnection(function(err, con) {
-	if (err) {
-		if(con) {
-			con.release();
-		}
-		console.error(err);
-		res.sendStatus(500, "Database error");
-	} else {
+	connectAndQuery(req, res, function(req, res, con){
 		var id = req.params.id;
 		var query = module.exports.squel.select()
-						.from("todo")
-						.where("id=?", id);
+										.from("todo")
+										.where("id=?", id);
 		con.query(query.toString(), function(err, rows) {
 			con.release();
 			if (err) {
 				console.error(err);
 				res.status(400).send("Error on query execution.");
+			} else if (rows.length == 1) {
+				res.status(200).json(rows[0]);
 			} else {
-				if (rows.length == 1) {
-					res.status(200).json(rows[0]);
-				} else {
-					res.status(400).send("Invalid id");
-				}
+				res.status(400).send("Invalid id");
 			}
 		});
-	}
 	});
 };
 
@@ -81,14 +77,8 @@ module.exports.select = function selectNote(req, res) {
 * @param {res} response 
 */
 module.exports.create = function createNote(req, res) {
-	module.exports.mysql.getConnection(function(err, con) {
-	if (err) {
-		if(con) {
-			con.release();
-		}
-		console.error(err);
-		res.sendStatus(500, "Database error");
-	} else {
+
+	connectAndQuery(req, res, function(req, res, con) {
 		var title = req.body.title || "";
 		var description = req.body.description || "";
 		var created = req.body.created;
@@ -107,8 +97,7 @@ module.exports.create = function createNote(req, res) {
 						.set("created", created)
 						.set("done", done)
 						.set("category_id", category_id);
-		con.query(sql.toString(), errorhandler(res, con));
-	}
+		con.query(sql.toString(), responseHandler(res, con));		
 	});
 };
 
@@ -121,14 +110,8 @@ module.exports.create = function createNote(req, res) {
 * @param {res} response 
 */
 module.exports.selectAll = function selectAllNotes(req, res) {
-	module.exports.mysql.getConnection(function(err, con) {
-	if (err) {
-		if(con) {
-			con.release();
-		}
-		console.error(err);
-		res.status(500).send("Database error");
-	} else {
+
+	connectAndQuery(req, res, function(req, res, con) {
 		var query = module.exports.squel.select()
 										.from("todo", "t")
 										.left_join("category", "c", "t.category_id = c.id")
@@ -139,8 +122,7 @@ module.exports.selectAll = function selectAllNotes(req, res) {
 										.field("t.done")
 										.field("c.id", "category_id")
 										.field("c.name", "category_name");
-		con.query(query.toString(), errorhandler(res, con));
-	}
+		con.query(query.toString(), responseHandler(res, con));
 	});
 };
 
@@ -152,14 +134,8 @@ module.exports.selectAll = function selectAllNotes(req, res) {
 * @param {res} response 
 */
 module.exports.update = function updateNote(req, res) {
-	module.exports.mysql.getConnection(function(err, con) {
-	if (err) {
-		if(con) {
-			con.release();
-		}
-		console.error(err);
-		res.sendStatus(500, "Database error");
-	} else {
+
+	connectAndQuery(req, res, function(req, res, con) {
 		var id = req.params.id;
 		var title = req.body.title || "";
 		var description = req.body.description || "";
@@ -175,7 +151,6 @@ module.exports.update = function updateNote(req, res) {
 										.set("done", done)
 										.set("category_id", category_id)
 										.where("id=?", id);		
-		con.query(query.toString(), errorhandler(res, con));
-	}
+		con.query(query.toString(), responseHandler(res, con));
 	});
 };
