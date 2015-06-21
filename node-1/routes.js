@@ -310,7 +310,8 @@ module.exports = function(app, db){
 							);	
 						} else {
 							// If no category is set, perform the update with category = NULL
-							db.query("UPDATE todo SET description=?, title=?, created=?, done=?, category_id=NULL WHERE id = ? LIMIT 1", [newDescription, newTitle, newCreated, newDone, newCategoryName, noteId],
+							// console.log("Category==null: " + newDescription + ", " + newTitle + ", " + newCreated + ", " + newDone + ", " + newCategoryName);
+							db.query("UPDATE todo SET description=?, title=?, created=?, done=?, category_id=NULL WHERE id = ? LIMIT 1", [newDescription, newTitle, newCreated, newDone, noteId],
 								errorhandler(res),
 								function(rows) {
 									// After the UPDATE, perform a SELECT to retrieve the new values and show the complete note, as with a GET request
