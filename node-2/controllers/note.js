@@ -143,6 +143,11 @@ module.exports.update = function updateNote(req, res) {
 		var done = req.body.done;
 		var category_id = req.body.category_id;
 
+		// check if there was given a category id, else add uncategorized note
+		if (category_id == "") {
+			category_id = null;
+		}
+
 		var query = module.exports.squel.update()
 										.table("todo")
 										.set("title", title)
