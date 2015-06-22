@@ -6,9 +6,10 @@ Anleitung für das Setup:
 	./mysql.conf.js
 	./mysql.js
 	./routes.js
-	./webeng.sql
 	./static/elastic.js
 	./static/index.html
+	./static/script.js
+	./static/style.css
 
 
 2) Installation von node, Node Package Manager (npm) sowie benötigten Libraries
@@ -18,11 +19,12 @@ Anleitung für das Setup:
 	sudo apt-get install node npm
 	npm install express
 	npm install body-parser
+	npm install mysql
 
 
 3) Aufsetzen der Datenbank
 
-	Die Datenbank muss nach dem gegebenen ER-Diagramm angelegt werden. Dazu können die Anweisungen in der Datei ./webeng.sql benutzt werden.
+	Die Datenbank muss nach dem gegebenen ER-Diagramm angelegt werden, wobei zur vereinfachung der serverseitigen Querys auch eine weitere View mit den Join von Todo und Category notwendig. Dazu können die Anweisungen in der Datei ./database.sql benutzt werden.
 
 
 4) Konfiguration: Die Datei ./mysql.conf.js muss folgendermaßen angepasst werden:

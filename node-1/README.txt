@@ -55,3 +55,9 @@ POST 	/notes/<id>
 Client:
 
 Single-Page-Anwendung unter Benutzung von AngularJS. Die Daten werden über die RESTful API des node.js-Server geladen und geändert und dann angezeigt.
+Das Laden der Daten in das lokale Model verwendet das ngResource Modul, die Verwaltung des Models übernimmt der TodoListController. Dank two-way-databinding kann der View vollständig im HTML Code definiert werden.
+Im Menü rechts oben kann die Kategorie ausgewählt werden, die angezeigt werden soll. Alternativ können alle Notizen angezeigt werden ("any"), oder nur die, die keiner Kategorie angehören ("none"). Mit den eingekreisten Plus und Minus Symbolen können Kategorien angelegt und gelöscht werden, der Bleistift ändert den Namen der Kategorie. Mit dem Pfeil nach unten werden alle momentan sichtbaren, als abgeschlossen markierte Notizen gelöscht werden. Das Plus fügt eine neue Notiz hinzu.
+Durch klicken auf den Text einer Notiz kann dieser bearbeitet werden, das Verlassen des Eingabefeldes speichert die Änderungen automatisch. Hierbei ist zu beachten, dass die erste Zeile des Textes als Titel interpretiert wird, da so das Wechseln zwischen mehreren Eingabefeldern vermieden wird, was die Usability erhöht.
+Die Checkbox link von einer Notiz markiert diese als fertig, mit dem Kreuz rechts wird eine Notiz gelöscht. Zudem werden rechts das Erstellungsdatum und, falls vorhanden, die Kategorie angezeit.
+Dank CSS 3 Media Queries skaliert die Website automatisch auf mobilen Endgeräten.
+Tritt ein Fehler bei der Kommunikation mit dem Server auf, wird eine rote Fehlermeldung unterhalt der Notizliste angezeigt.
