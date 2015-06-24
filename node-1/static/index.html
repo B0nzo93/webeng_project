@@ -55,7 +55,7 @@
 				<div class="entry-checkbox"><input type="checkbox" ng-model="todo.done" ng-click="todoList.validate(todo);"/></div>
 				<div class="entry-text">
 					<!--todo.title could also have its own input, but simply putting it as the first line of the description has a better usability
-					<input class="entry-title" type="text" ng-model="todo.title" />-->
+					<input class="entry-title" type="text" ng-model="todo.title" ng-blur="todoList.validate(todo)" />-->
 					<div 
 						ng-bind-html="todo.text | nl2br"
 						ng-hide="todo.editable" 
@@ -70,6 +70,8 @@
 						msd-elastic></textarea>
 				</div>
 				<div class="entry-info">
+					<!-- For modifying the category a similar select as above could be used
+					<select id="entry-category-select" ng-model="todo.category" ng-options="cat for cat in todoList.editCategories" ng-blur="todoList.validate(todo)" ></select> -->
 					<span class="entry-info-category" ng-bind-html="todo.category"></span>
 					<span class="entry-info-date" ng-bind-html="todo.date | date:'yyyy-MM-dd'"></span>
 				</div>
